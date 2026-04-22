@@ -1,0 +1,13 @@
+{
+  "ownerId": "skill-protector-system",
+  "slug": "skill-protector",
+  "version": "1.0.0",
+  "publishedAt": 1776827123,
+  "description": "保护技能文件不被误删除，提供删除前的确认和备份机制",
+  "tags": ["protection", "backup", "safety", "file-management"],
+  "dependencies": [],
+  "compatibility": {
+    "minTraeVersion": "1.0.0",
+    "platforms": ["macos", "linux", "windows"]
+  }
+}
