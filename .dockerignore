@@ -15,10 +15,10 @@ Thumbs.db
 # 依赖目录 - Docker会重新安装
 node_modules/
 
-# 构建输出 - Docker会重新构建
-dist/
-target/
-backend/target/
+# 构建输出 - 排除根目录dist，但保留frontend/dist（预构建产物）
+/dist
+/target
+/backend/target/
 
 # 环境变量文件（敏感信息）
 .env

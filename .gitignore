@@ -6,9 +6,9 @@ node_modules/
 .env-setup/backend/mvnw
 .env-setup/backend/mvnw.cmd
 
-# 构建输出
-dist/
-build/
+# 构建输出（根目录dist排除，但保留frontend/dist用于部署）
+/dist
+/build/
 .env-setup/frontend/dist/
 .env-setup/backend/target/
 
