@@ -1,10 +1,5 @@
--- MySQL数据库表结构
--- 注意：MySQL与H2有些语法差异，这里已做适配
-
--- 创建数据库（如果不存在）
-CREATE DATABASE IF NOT EXISTS campus_market DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-USE campus_market;
+-- MySQL数据库表结构（Railway生产环境版）
+-- 注意：不需要CREATE DATABASE和USE，Railway会自动处理
 
 -- 创建users表
 CREATE TABLE IF NOT EXISTS users (
@@ -18,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
     avatar VARCHAR(255),
     school VARCHAR(100),
     major VARCHAR(100),
-    is_student TINYINT(1) DEFAULT 0, -- MySQL中使用TINYINT(1)表示布尔值
+    is_student TINYINT(1) DEFAULT 0,
     status VARCHAR(20) DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
