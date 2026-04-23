@@ -1,0 +1,18 @@
+{
+  "ownerId": "agent-coordinator-system",
+  "slug": "agent-coordinator",
+  "version": "1.0.0",
+  "publishedAt": 1776839470,
+  "description": "智能协调不同智能体和技能，根据用户命令自动选择最佳执行方案",
+  "tags": ["coordination", "agent-selection", "task-management", "automation"],
+  "dependencies": [
+    "github",
+    "summarize",
+    "find-skills",
+    "self-improving-agent"
+  ],
+  "compatibility": {
+    "minTraeVersion": "1.0.0",
+    "platforms": ["macos", "linux", "windows"]
+  }
+}

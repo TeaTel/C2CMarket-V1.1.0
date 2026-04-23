@@ -131,14 +131,22 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<?> handleException(Exception e, HttpServletRequest request) {
-        logger.error("系统异常: {}", e.getMessage(), e);
-        return Result.error(ErrorCode.INTERNAL_SERVER_ERROR, "系统内部错误");
+        logger.error("系统异常: {} - URI: {}", e.getMessage(), request.getRequestURI(), e);
+        String detail = e.getMessage() != null ? e.getMessage() : "系统内部错误";
+        if (detail.length() > 200) {
+            detail = detail.substring(0, 200) + "...";
+        }
+        return Result.error(ErrorCode.INTERNAL_SERVER_ERROR, detail);
     }
-    
+
     @ExceptionHandler(RuntimeException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<?> handleRuntimeException(RuntimeException e, HttpServletRequest request) {
-        logger.error("运行时异常: {}", e.getMessage(), e);
-        return Result.error(ErrorCode.INTERNAL_SERVER_ERROR, "系统运行时错误");
+        logger.error("运行时异常: {} - URI: {}", e.getMessage(), request.getRequestURI(), e);
+        String detail = e.getMessage() != null ? e.getMessage() : "系统运行时错误";
+        if (detail.length() > 200) {
+            detail = detail.substring(0, 200) + "...";
+        }
+        return Result.error(ErrorCode.INTERNAL_SERVER_ERROR, detail);
     }
 }

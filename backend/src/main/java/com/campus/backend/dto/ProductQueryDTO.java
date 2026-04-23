@@ -37,4 +37,8 @@ public class ProductQueryDTO {
     public void setSize(Integer size) {
         this.size = size;
     }
+
+    public Integer getOffset() {
+        return size * (page - 1);
+    }
 }
