@@ -99,12 +99,36 @@ function checkAuth() {
   const storedToken = localStorage.getItem('token')
   const storedUser = localStorage.getItem('user')
   
-  if (storedToken && storedUser) {
+  if (!storedToken || !storedUser) {
+    return false
+  }
+  
+  // 基本格式验证
+  try {
     token.value = storedToken
     user.value = JSON.parse(storedUser)
+    
+    // 如果有expiry字段，检查是否过期
+    if (user.value?.tokenExpiry && new Date() > new Date(user.value.tokenExpiry)) {
+      clearAuthData()
+      return false
+    }
+    
     return true
+  } catch (e) {
+    console.error('解析用户信息失败:', e)
+    clearAuthData()
+    return false
   }
-  return false
+}
+
+// 内部方法：清除认证数据
+function clearAuthData() {
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  
+  token.value = ''
+  user.value = null
 }
 
 // 导出store
@@ -123,6 +147,7 @@ export function useAuthStore() {
     register,
     logout,
     fetchUserInfo,
-    checkAuth
+    checkAuth,
+    clearAuthData
   }
 }

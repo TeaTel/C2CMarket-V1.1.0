@@ -10,6 +10,14 @@
             <router-link v-if="isAuthenticated" to="/products/create" class="create-btn">
               <span>+</span> 发布商品
             </router-link>
+            <button
+              v-else
+              @click="handlePublishClick"
+              class="create-btn create-btn-disabled"
+              title="请先登录后再发布商品"
+            >
+              <span>🔒</span> 发布商品（需登录）
+            </button>
           </div>
         </div>
         
@@ -56,6 +64,13 @@
           <router-link v-if="isAuthenticated" to="/products/create" class="empty-action-btn">
             发布第一个商品
           </router-link>
+          <button
+            v-else
+            @click="handlePublishClick"
+            class="empty-action-btn empty-action-btn-disabled"
+          >
+            登录后发布第一个商品
+          </button>
         </div>
         
         <div v-else class="products-grid">
@@ -274,6 +289,13 @@ function addToCart(product) {
   // 这里可以添加购物车逻辑
   alert(`已将 ${product.name} 加入购物车`)
 }
+
+function handlePublishClick() {
+  router.push({
+    path: '/login',
+    query: { redirect: '/products/create' }
+  })
+}
 </script>
 
 <style scoped>
@@ -322,6 +344,15 @@ function addToCart(product) {
 
 .create-btn:hover {
   background-color: #45a049;
+}
+
+.create-btn-disabled {
+  background-color: #9e9e9e;
+  cursor: pointer;
+}
+
+.create-btn-disabled:hover {
+  background-color: #757575;
 }
 
 .filters-section {
@@ -425,6 +456,16 @@ function addToCart(product) {
 
 .empty-action-btn:hover {
   background-color: #45a049;
+}
+
+.empty-action-btn-disabled {
+  background-color: #9e9e9e;
+  cursor: pointer;
+  border: none;
+}
+
+.empty-action-btn-disabled:hover {
+  background-color: #757575;
 }
 
 .products-grid {

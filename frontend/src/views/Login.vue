@@ -163,10 +163,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../store/auth'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 const username = ref('')
@@ -214,9 +215,12 @@ async function handleLogin() {
       // 显示成功消息
       showSuccessMessage()
       
-      // 延迟跳转到首页
+      // 获取重定向地址（优先使用query参数，否则回首页）
+      const redirectPath = route.query.redirect || '/'
+      
+      // 延迟跳转到目标页面
       setTimeout(() => {
-        router.push('/')
+        router.push(redirectPath)
       }, 1500)
     } else {
       errorMessage.value = result.message || '登录失败，请检查用户名和密码'
