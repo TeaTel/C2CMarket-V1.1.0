@@ -1,5 +1,6 @@
-# 单阶段Docker构建 - 校园二手交易平台
+# 单阶段Docker构建 - 校园二手交易平台 v2.0 (闲鱼风格)
 # 策略：前端已预构建并放入backend/src/main/resources/static/
+# DEPLOY: v2.0-refactor-2026-04-24
 
 FROM maven:3.9-eclipse-temurin-21 AS build
 
