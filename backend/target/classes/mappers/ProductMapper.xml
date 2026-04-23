@@ -15,9 +15,9 @@
             AND status = 'active'
         </where>
         ORDER BY created_at DESC
-        LIMIT #{query.size} OFFSET #{query.size} * (#{query.page} - 1)
+        LIMIT #{query.size} OFFSET #{query.offset}
     </select>
-    
+
     <select id="selectProductCount" resultType="int">
         SELECT COUNT(*) FROM products
         <where>
@@ -30,4 +30,36 @@
             AND status = 'active'
         </where>
     </select>
+
+    <select id="selectProductById" resultType="com.campus.backend.entity.Product">
+        SELECT * FROM products WHERE id = #{id}
+    </select>
+
+    <select id="selectProductsBySellerId" resultType="com.campus.backend.entity.Product">
+        SELECT * FROM products WHERE seller_id = #{sellerId} ORDER BY created_at DESC
+    </select>
+
+    <insert id="insertProduct" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO products (name, description, price, category_id, seller_id, status, image_url, contact_phone, contact_wechat)
+        VALUES (#{name}, #{description}, #{price}, #{categoryId}, #{sellerId}, #{status}, #{imageUrl}, #{contactPhone}, #{contactWechat})
+    </insert>
+
+    <update id="updateProduct">
+        UPDATE products
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="price != null">price = #{price},</if>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="imageUrl != null">image_url = #{imageUrl},</if>
+            <if test="contactPhone != null">contact_phone = #{contactPhone},</if>
+            <if test="contactWechat != null">contact_wechat = #{contactWechat},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteProduct">
+        DELETE FROM products WHERE id = #{id}
+    </delete>
 </mapper>

@@ -15,7 +15,6 @@ public class WebConfig implements WebMvcConfigurer {
     
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // 注册API版本拦截器，拦截所有API请求
         registry.addInterceptor(apiVersionInterceptor)
                 .addPathPatterns("/api/**")
                 .excludePathPatterns("/api-docs/**", "/swagger-ui/**", "/h2-console/**");
@@ -23,8 +22,8 @@ public class WebConfig implements WebMvcConfigurer {
     
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 配置静态资源处理器
-        registry.addResourceHandler("/**")
+        // 静态资源只匹配非API路径，避免拦截 /api/** 请求
+        registry.addResourceHandler("/", "/**")
                 .addResourceLocations("classpath:/static/")
                 .setCachePeriod(3600);
     }

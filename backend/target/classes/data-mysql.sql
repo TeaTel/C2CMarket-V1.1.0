@@ -1,8 +1,6 @@
 -- MySQL测试数据初始化
 -- 注意：密码使用BCrypt加密，原始密码都是：password123
 
-USE campus_market;
-
 -- 插入测试用户数据
 INSERT INTO users (username, password_hash, phone, email, school, major, is_student) VALUES
 ('student1', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVwE.', '13800138001', 'student1@example.com', '清华大学', '计算机科学', 1),
@@ -44,8 +42,8 @@ ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
 
 -- 插入测试订单项数据
 INSERT INTO order_items (order_id, product_id, quantity, price) VALUES
-(1, 2, 1, 50.00),  -- 大学物理教材
-(2, 1, 1, 3500.00) -- 二手笔记本电脑
+(1, 2, 1, 50.00),
+(2, 1, 1, 3500.00)
 ON DUPLICATE KEY UPDATE created_at = CURRENT_TIMESTAMP;
 
 -- 插入测试消息数据
