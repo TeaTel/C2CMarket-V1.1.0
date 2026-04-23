@@ -1,6 +1,6 @@
 # Cache Buster - Force Docker Rebuild
-# Version: 6.0 - Final fix: precise resource handler paths excluding /api/
-# Timestamp: 2026-04-23T19:00:00+08:00
-BUILD_VERSION=6.0.0-final-fix-precise-paths
+# Version: 7.0 - Add diagnostics controller + restore lazy-init
+# Timestamp: 2026-04-23T19:10:00+08:00
+BUILD_VERSION=7.0.0-diagnostics-controller
 FORCE_REBUILD=true
-FIX_DESCRIPTION=Restored_precise_path_config_to_exclude_API_from_static_handler
+FIX_DESCRIPTION=Added_DiagnosticsController_to_test_if_Spring_MVC_works
