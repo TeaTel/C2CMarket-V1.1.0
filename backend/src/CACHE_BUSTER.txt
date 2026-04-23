@@ -1,6 +1,5 @@
-# Cache Buster - FINAL FIX
-# Version: 9.0 - Remove ALL custom resource handlers, use Spring Boot defaults
-# Timestamp: 2026-04-23T19:40:00+08:00
-BUILD_VERSION=9.0.0-FINAL-remove-custom-resource-handlers
+# Cache Buster - v10
+# Version: 10.0 - Make Service injection optional to allow Controller registration
+# Timestamp: 2026-04-23T20:00:00+08:00
+BUILD_VERSION=10.0.0-optional-service-injection
 FORCE_REBUILD=true
-FIX_DESCRIPTION=Complete_removal_of_addResourceHandlers_to_use_Spring_Boot_defaults
