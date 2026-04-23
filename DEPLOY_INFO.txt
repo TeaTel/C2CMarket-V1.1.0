@@ -1,0 +1,5 @@
+# 部署时间戳 - 用于强制Railway重新构建
+# 每次修改此文件可绕过Docker层缓存
+DEPLOY_TIMESTAMP=2026-04-23T16:10:00+08:00
+DEPLOY_VERSION=fix-v2.0-critical-hotfix
+BUILD_NUMBER=$(date +%s)

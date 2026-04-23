@@ -39,10 +39,10 @@ spring:
         order_inserts: true
         order_updates: true
   
-  # 生产环境CORS配置（根据实际前端域名配置）
+  # 生产环境CORS配置（前后端一体化部署）
   web:
     cors:
-      allowed-origins: "${ALLOWED_ORIGINS:http://localhost:3000,https://your-frontend-domain.vercel.app}"
+      allowed-origins: "${ALLOWED_ORIGINS:https://c2cmarket.store,http://localhost:8080}"
       allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
       allowed-headers: "*"
       allow-credentials: true
