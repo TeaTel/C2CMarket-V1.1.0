@@ -1,5 +1,0 @@
-# Cache Buster - v13
-# Version: 13.0 - All Controllers use optional Service injection
-# Timestamp: 2026-04-23T20:35:00+08:00
-BUILD_VERSION=13.0.0-optional-service-injection-all-controllers
-FORCE_REBUILD=true

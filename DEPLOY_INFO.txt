@@ -1,6 +1,0 @@
-# 部署时间戳 - 用于强制Railway重新构建
-# 修复ERR_ABORTED错误 - 移除static-path-pattern配置冲突
-DEPLOY_TIMESTAMP=2026-04-23T16:20:00+08:00
-DEPLOY_VERSION=fix-v3.0-critical-err-aborted
-BUILD_NUMBER=$(date +%s)
-FIX_DESCRIPTION=Removed_conflicting_static_path_pattern_in_application-prod.yml
