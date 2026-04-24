@@ -48,9 +48,11 @@ public interface OrderMapper {
     /**
      * 更新订单状态
      */
-    @Update("UPDATE orders SET status = #{status}, updated_at = CURRENT_TIMESTAMP " +
-            "#{completedAt != null ? ', completed_at = ' + #{completedAt} : ''} " +
-            "WHERE id = #{id}")
+    @Update("<script>" +
+            "UPDATE orders SET status = #{status}, updated_at = CURRENT_TIMESTAMP " +
+            "<if test='completedAt != null'>, completed_at = #{completedAt}</if> " +
+            "WHERE id = #{id}" +
+            "</script>")
     int updateStatus(
         @Param("id") Long id,
         @Param("status") String status,
