@@ -12,8 +12,11 @@ import java.util.Arrays;
 
 @Configuration
 @EnableCaching
-// 当Redis不可用时启用此配置
-@org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass("org.springframework.data.redis.connection.RedisConnectionFactory")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+    name = "spring.data.redis.enabled",
+    havingValue = "false",
+    matchIfMissing = true
+)
 public class SimpleCacheConfig extends CachingConfigurerSupport {
     
     @Bean
