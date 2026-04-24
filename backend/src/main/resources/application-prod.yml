@@ -1,9 +1,9 @@
 # 生产环境配置
 spring:
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:campus_market}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&connectTimeout=60000&socketTimeout=60000
+    url: jdbc:mysql://${DB_HOST:mysql.railway.internal}:${DB_PORT:3306}/${DB_NAME:railway}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&connectTimeout=60000&socketTimeout=60000
     username: ${DB_USER:root}
-    password: ${DB_PASSWORD:123456}
+    password: ${DB_PASSWORD:twdrRMIivFTsXgAakbkBJzTLJdmpoArP}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 5
@@ -19,6 +19,7 @@ spring:
     init:
       encoding: UTF-8
       mode: always
+      continue-on-error: true
       schema-locations: classpath:migration-v2.sql
       data-locations: classpath:data-mysql.sql
   
