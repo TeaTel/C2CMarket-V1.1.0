@@ -1,5 +1,8 @@
 <template>
   <div id="app" class="app-container">
+    <!-- 全局Header（登录/注册/用户信息） -->
+    <AppHeader />
+
     <!-- 主内容区域（带底部TabBar间距） -->
     <main class="main-content" :class="{ 'with-tabbar': showTabBar }">
       <router-view v-slot="{ Component }">
@@ -20,6 +23,7 @@ import { useRoute } from 'vue-router'
 import { useAuthStore } from './store/auth'
 import { wsManager } from './services/api'
 import TabBar from './components/NavBar.vue'
+import AppHeader from './components/AppHeader.vue'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -87,6 +91,7 @@ onMounted(() => {
 /* 主内容区域 */
 .main-content {
   min-height: 100vh;
+  padding-top: 48px; /* Header高度 */
   padding-bottom: 0; /* 默认无底部间距 */
   transition: padding-bottom 0.3s ease;
 }

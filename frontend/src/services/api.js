@@ -1,11 +1,30 @@
 import axios from 'axios'
 
+// 获取API基础URL（支持多环境配置）
+function getBaseURL() {
+  // 优先使用环境变量
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return `${import.meta.env.VITE_API_BASE_URL}/api`
+  }
+
+  // 生产环境：使用当前域名（适配 c2cmarket.store 等生产域名）
+  const hostname = window.location.hostname
+
+  // 如果是localhost开发环境
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:8080/api'
+  }
+
+  // 生产环境：自动使用当前域名的API
+  // 例如：c2cmarket.store -> https://c2cmarket.store/api
+  const protocol = window.location.protocol
+  return `${protocol}//${hostname}/api`
+}
+
 // 创建axios实例
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL
-    ? `${import.meta.env.VITE_API_BASE_URL}/api`
-    : 'http://localhost:8080/api',
-  timeout: 15000,
+  baseURL: getBaseURL(),
+  timeout: 20000, // 增加超时时间到20秒
   headers: {
     'Content-Type': 'application/json'
   }
@@ -25,7 +44,7 @@ api.interceptors.request.use(
   }
 )
 
-// 响应拦截器 - 处理错误
+// 响应拦截器 - 处理错误（增强版）
 api.interceptors.response.use(
   response => {
     return response.data
@@ -34,30 +53,75 @@ api.interceptors.response.use(
     if (error.response) {
       const { status, data } = error.response
       let message = '请求失败'
+      let shouldLogout = false
 
+      // 根据状态码生成友好的错误消息
       if (data && data.message) {
         message = data.message
+      } else if (status === 400) {
+        message = '请求参数错误，请检查输入'
       } else if (status === 401) {
-        message = '未授权，请重新登录'
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
-        window.location.href = '/login'
+        message = '登录已过期，请重新登录'
+        shouldLogout = true
       } else if (status === 403) {
-        message = '权限不足'
+        message = '权限不足，无法执行此操作'
       } else if (status === 404) {
         message = '请求的资源不存在'
-      } else if (status >= 500) {
-        message = '服务器内部错误'
+      } else if (status === 429) {
+        message = '操作太频繁，请稍后再试'
+      } else if (status >= 500 && status < 504) {
+        // 服务器错误（包括502 Bad Gateway, 503 Service Unavailable）
+        const serverErrors = {
+          500: '服务器内部错误',
+          502: '网关错误，服务暂时不可用',
+          503: '服务维护中，请稍后重试',
+          504: '网关超时，请稍后重试'
+        }
+        message = serverErrors[status] || '服务器繁忙，请稍后重试'
       }
 
-      console.error(`请求错误 ${status}:`, message)
-      return Promise.reject({ message, status })
+      console.error(`[API Error ${status}]:`, message)
+
+      // 如果需要登出（如token过期）
+      if (shouldLogout) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        // 不在这里直接跳转，让组件自行决定如何处理
+      }
+
+      return Promise.reject({ message, status, code: status })
     } else if (error.request) {
-      console.error('网络错误:', error.message)
-      return Promise.reject({ message: '网络连接失败，请检查网络设置' })
+      // 请求已发出但没有收到响应（网络问题）
+      console.error('[Network Error]:', error.message)
+
+      // 区分不同网络错误类型
+      if (error.message.includes('timeout')) {
+        return Promise.reject({
+          message: '请求超时，请检查网络后重试',
+          status: 0,
+          code: 'TIMEOUT'
+        })
+      } else if (error.message.includes('Network Error')) {
+        return Promise.reject({
+          message: '网络连接失败，请检查网络设置',
+          status: 0,
+          code: 'NETWORK_ERROR'
+        })
+      }
+
+      return Promise.reject({
+        message: '网络连接失败，请检查网络设置',
+        status: 0,
+        code: 'NETWORK_ERROR'
+      })
     } else {
-      console.error('请求配置错误:', error.message)
-      return Promise.reject({ message: '请求配置错误' })
+      // 请求配置出错
+      console.error('[Request Config Error]:', error.message)
+      return Promise.reject({
+        message: '请求配置错误',
+        status: 0,
+        code: 'CONFIG_ERROR'
+      })
     }
   }
 )

@@ -134,9 +134,10 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { userApi } from '../services/api'
+import { useAuthStore } from '../store/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 const form = ref({
   username: '',
@@ -182,22 +183,36 @@ async function handleRegister() {
     loading.value = true
     errorMessage.value = ''
 
-    const response = await userApi.register({
+    // 使用authStore的register方法（自动处理token和用户信息的保存）
+    const result = await authStore.register({
       username: form.value.username,
       nickname: form.value.nickname,
       email: form.value.email || undefined,
       password: form.value.password
     })
 
-    if (response.code === 200) {
-      alert('注册成功！请登录')
-      router.push('/login')
+    if (result.success) {
+      // 注册成功后跳转到登录页
+      router.push({
+        path: '/login',
+        query: { registered: 'true', username: form.value.username }
+      })
     } else {
-      errorMessage.value = response.message || '注册失败，请稍后重试'
+      errorMessage.value = result.message || '注册失败，请稍后重试'
     }
   } catch (error) {
     console.error('注册失败:', error)
-    errorMessage.value = error.message || '网络错误'
+
+    // 根据错误类型显示不同提示
+    if (error.code === 'NETWORK_ERROR' || error.code === 'TIMEOUT') {
+      errorMessage.value = error.message || '网络错误，请稍后重试'
+    } else if (error.status === 400) {
+      errorMessage.value = error.message || '注册信息有误，请检查输入'
+    } else if (error.status === 409) {
+      errorMessage.value = '该用户名已被注册'
+    } else {
+      errorMessage.value = error.message || '注册失败，请稍后重试'
+    }
   } finally {
     loading.value = false
   }

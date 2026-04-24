@@ -145,29 +145,30 @@ async function handleLogin() {
     loading.value = true
     errorMessage.value = ''
 
-    const response = await userApi.login({
-      username: form.value.username,
-      password: form.value.password
-    })
+    // 使用authStore的login方法（自动处理token和用户信息的保存）
+    const result = await authStore.login(
+      form.value.username,
+      form.value.password
+    )
 
-    if (response.code === 200) {
-      // 保存token和用户信息
-      const { token, user } = response.data
-
-      localStorage.setItem('token', token)
-      localStorage.setItem('user', JSON.stringify(user))
-
-      authStore.login(user, token)
-
+    if (result.success) {
       // 跳转到之前的页面或首页
       const redirectPath = route.query.redirect || '/'
       router.push(redirectPath)
     } else {
-      errorMessage.value = response.message || '登录失败，请检查账号密码'
+      errorMessage.value = result.message || '登录失败，请检查账号密码'
     }
   } catch (error) {
     console.error('登录失败:', error)
-    errorMessage.value = error.message || '网络错误，请稍后重试'
+
+    // 根据错误类型显示不同提示
+    if (error.code === 'NETWORK_ERROR' || error.code === 'TIMEOUT') {
+      errorMessage.value = error.message || '网络错误，请稍后重试'
+    } else if (error.status === 401) {
+      errorMessage.value = '账号或密码错误'
+    } else {
+      errorMessage.value = error.message || '登录失败，请稍后重试'
+    }
   } finally {
     loading.value = false
   }

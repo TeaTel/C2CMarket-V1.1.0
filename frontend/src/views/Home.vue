@@ -119,6 +119,15 @@
           </div>
         </div>
 
+        <!-- 错误状态 -->
+        <div v-else-if="error && products.length === 0" class="error-state">
+          <div class="error-icon">😔</div>
+          <p class="error-text">{{ error }}</p>
+          <button @click="retryLoad" class="retry-btn">
+            点击重试
+          </button>
+        </div>
+
         <!-- 空状态 -->
         <div v-else-if="products.length === 0" class="empty-state">
           <div class="empty-icon">📦</div>
@@ -204,6 +213,8 @@ const products = ref([])
 const loading = ref(true)
 const loadingMore = ref(false)
 const hasMore = ref(true)
+const error = ref(null) // 错误信息
+const retryCount = ref(0) // 重试次数
 
 // 分页参数
 const currentPage = ref(1)
@@ -241,6 +252,9 @@ onUnmounted(() => {
 // 加载商品数据
 async function loadProducts(isLoadMore = false) {
   try {
+    // 重置错误状态
+    error.value = null
+
     if (isLoadMore) {
       loadingMore.value = true
     } else {
@@ -267,13 +281,42 @@ async function loadProducts(isLoadMore = false) {
       // 判断是否还有更多数据
       const total = response.data?.total || 0
       hasMore.value = products.value.length < total
+
+      // 成功后重置重试计数
+      retryCount.value = 0
+    } else {
+      // API返回业务错误
+      throw new Error(response.message || '加载商品失败')
     }
-  } catch (error) {
-    console.error('加载商品失败:', error)
+  } catch (err) {
+    console.error('加载商品失败:', err)
+
+    // 设置错误信息
+    error.value = err.message || '加载失败，请稍后重试'
+
+    // 如果不是加载更多，且重试次数小于3次，自动重试
+    if (!isLoadMore && retryCount.value < 3) {
+      retryCount.value++
+      console.log(`自动重试第 ${retryCount.value} 次...`)
+      setTimeout(() => loadProducts(false), 1000 * retryCount.value)
+      return
+    }
+
+    // 加载更多时出错，回滚页码
+    if (isLoadMore) {
+      currentPage.value--
+    }
   } finally {
     loading.value = false
     loadingMore.value = false
   }
+}
+
+// 手动重试
+function retryLoad() {
+  retryCount.value = 0
+  currentPage.value = 1
+  loadProducts()
 }
 
 // 加载更多
@@ -910,6 +953,44 @@ function getDefaultImage(categoryId) {
 }
 
 .empty-btn:active {
+  transform: scale(0.95);
+}
+
+/* 错误状态 */
+.error-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.error-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.8;
+}
+
+.error-text {
+  font-size: 15px;
+  color: #666;
+  margin-bottom: 24px;
+  line-height: 1.5;
+  max-width: 280px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.retry-btn {
+  background: linear-gradient(135deg, #FF6A00 0%, #FF8533 100%);
+  color: white;
+  padding: 12px 32px;
+  border-radius: 20px;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.retry-btn:active {
   transform: scale(0.95);
 }
 

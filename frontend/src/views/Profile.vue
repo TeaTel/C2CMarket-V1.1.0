@@ -111,20 +111,58 @@
       <!-- 版本信息 -->
       <p class="version-info">校园二手 v1.0.0</p>
     </main>
+
+    <!-- 退出登录确认弹窗 -->
+    <Teleport to="body">
+      <div v-if="showLogoutConfirm" class="logout-modal-overlay" @click="cancelLogout">
+        <div class="logout-modal" @click.stop>
+          <div class="modal-icon">⚠️</div>
+          <h3 class="modal-title">确定要退出登录吗？</h3>
+          <p class="modal-desc">退出后需要重新登录才能使用完整功能</p>
+
+          <div class="modal-actions">
+            <button @click="cancelLogout" class="modal-btn cancel-btn">取消</button>
+            <button @click="confirmLogout" class="modal-btn confirm-btn">确定退出</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
-const defaultAvatar = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0UwRTBFRCIvPjxjaXJjbGUgY3g9IjIwIiBjeT0iMTciIHI9IjgiIGZpbGw9IndoaXRlIi8+PC9zdmc+'
+// 默认头像（SVG base64）
+const defaultAvatar = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0UwRTBFRCIvPjxjaXJjbGUgY3g9IjIwIiBjeT0iMTciIHI9IjgiIGZpbGw9IndoaXRlIi8+PC9zdmc+`
 
-const userInfo = ref({})
+// 用户信息（从store计算）
+const userInfo = computed(() => {
+  // 优先使用store中的用户信息
+  if (authStore.currentUser.value) {
+    return authStore.currentUser.value
+  }
+
+  // 备用：从localStorage读取
+  const storedUser = localStorage.getItem('user')
+  if (storedUser) {
+    try {
+      return JSON.parse(storedUser)
+    } catch (e) {
+      console.error('解析用户信息失败:', e)
+      return {}
+    }
+  }
+
+  return {}
+})
+
+// 统计数据
 const stats = reactive({
   published: 0,
   sold: 0,
@@ -132,27 +170,37 @@ const stats = reactive({
 })
 
 const showAbout = ref(false)
+const showLogoutConfirm = ref(false) // 控制退出登录确认弹窗
 
 onMounted(async () => {
-  // 从store或localStorage获取用户信息
-  const storedUser = localStorage.getItem('user')
-  if (storedUser) {
-    try {
-      userInfo.value = JSON.parse(storedUser)
-    } catch (e) {
-      console.error('解析用户信息失败:', e)
+  // 尝试从API获取最新用户信息
+  if (authStore.isAuthenticated.value) {
+    await fetchUserInfo()
+    await fetchStats()
+  }
+})
+
+// 获取用户信息
+async function fetchUserInfo() {
+  try {
+    const result = await authStore.fetchUserInfo()
+    if (result.success) {
+      console.log('用户信息已更新')
     }
+  } catch (error) {
+    console.error('获取用户信息失败:', error)
+    // 静默失败，使用缓存数据
   }
+}
 
-  if (authStore.user) {
-    userInfo.value = authStore.user
-  }
-
-  // 模拟统计数据（实际应从API获取）
+// 获取统计数据（模拟，实际应从API获取）
+async function fetchStats() {
+  // TODO: 替换为实际的API调用
+  // 这里使用模拟数据，实际项目中应该调用统计接口
   stats.published = Math.floor(Math.random() * 10)
   stats.sold = Math.floor(Math.random() * 5)
   stats.favorites = Math.floor(Math.random() * 20)
-})
+}
 
 function handleAvatarClick() {
   alert('头像上传功能开发中...')
@@ -162,13 +210,22 @@ function goToSettings() {
   router.push('/settings')
 }
 
+// 显示退出确认弹窗
 function handleLogout() {
-  if (confirm('确定要退出登录吗？')) {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    authStore.logout()
-    router.push('/login')
-  }
+  showLogoutConfirm.value = true
+}
+
+// 确认退出登录
+function confirmLogout() {
+  showLogoutConfirm.value = false
+
+  // 调用authStore的logout方法（自动清除所有状态并跳转）
+  authStore.logout()
+}
+
+// 取消退出
+function cancelLogout() {
+  showLogoutConfirm.value = false
 }
 </script>
 
@@ -393,5 +450,107 @@ function handleLogout() {
   font-size: 12px;
   color: #ccc;
   margin-top: 24px;
+}
+
+/* ============================================
+   退出登录确认弹窗
+   ============================================ */
+.logout-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.logout-modal {
+  background-color: #fff;
+  border-radius: 16px;
+  padding: 32px 24px;
+  max-width: 320px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+.modal-desc {
+  font-size: 14px;
+  color: #999;
+  margin: 0 0 28px 0;
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.modal-btn {
+  flex: 1;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: none;
+}
+
+.cancel-btn {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+.cancel-btn:active {
+  background-color: #e8e8e8;
+  transform: scale(0.98);
+}
+
+.confirm-btn {
+  background-color: #FF4D4F;
+  color: white;
+  box-shadow: 0 4px 12px rgba(255, 77, 79, 0.25);
+}
+
+.confirm-btn:active {
+  background-color: #cf1322;
+  transform: scale(0.98);
+  box-shadow: 0 2px 6px rgba(255, 77, 79, 0.35);
 }
 </style>
