@@ -4,16 +4,18 @@
 
 FROM eclipse-temurin:21-jdk AS build
 
-ARG CACHE_BUST=v1.1.0-fix-build-20260424
+ARG CACHE_BUST=v1.1.0-fix-maven-dl-20260424
 
 ENV MAVEN_VERSION=3.9.9
 ENV MAVEN_HOME=/opt/maven
 
-RUN apt-get update && apt-get install -y curl && \
-    curl -sL https://dlcdn.apache.org/maven/maven-${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz | tar xz -C /opt && \
+RUN apt-get update && apt-get install -y --no-install-recommends curl && \
+    curl -fSL -o /tmp/maven.tar.gz "https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz" && \
+    tar xzf /tmp/maven.tar.gz -C /opt && \
+    rm /tmp/maven.tar.gz && \
     ln -s /opt/apache-maven-${MAVEN_VERSION} ${MAVEN_HOME} && \
     ln -s ${MAVEN_HOME}/bin/mvn /usr/local/bin/mvn && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+    apt-get purge -y curl && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app/backend
 
