@@ -116,10 +116,10 @@ CREATE TABLE IF NOT EXISTS chat_conversations (
     FOREIGN KEY (user1_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (user2_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
-    UNIQUE INDEX uk_user_pair (LEAST(user1_id, user2_id), GREATEST(user1_id, user2_id)),
     INDEX idx_user1 (user1_id),
     INDEX idx_user2 (user2_id),
-    INDEX idx_product (product_id)
+    INDEX idx_product (product_id),
+    INDEX idx_last_message_at (last_message_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='聊天会话表';
 
 CREATE TABLE IF NOT EXISTS chat_messages (
