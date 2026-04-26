@@ -1,10 +1,10 @@
-# 全栈Docker构建 - 校园二手交易平台 v1.1.0
+# 全栈Docker构建 - 校园二手交易平台 v1.1.1
 # 构建顺序: 前端(Vite) → 后端(Maven) → 运行(JRE)
-# DEPLOY: v1.1.0-FULLSTACK-2026-04-24
+# DEPLOY: v1.1.1-FORCE-REBUILD-2026-04-26
 
 FROM eclipse-temurin:21-jdk AS build
 
-ARG CACHE_BUST=v1.1.0-fullstack-20260424
+ARG CACHE_BUST=v1.1.1-force-rebuild-api-fix-20260426-1730
 
 ENV MAVEN_VERSION=3.9.9
 ENV MAVEN_HOME=/opt/maven
