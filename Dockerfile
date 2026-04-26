@@ -1,17 +1,19 @@
-# Full-stack Docker build - Campus Market v1.1.3
+# Full-stack Docker build - Campus Market v1.1.4
 # Build order: Frontend(Vite) -> Backend(Maven) -> Runtime(JRE)
-# DEPLOY: v1.1.3-NPM-FIX-2026-04-26
+# DEPLOY: v1.1.4-COMPLETE-REBUILD-2026-04-26
 
 FROM eclipse-temurin:21-jdk AS build
 
-ARG CACHE_BUST=v1.1.3-npm-fix-20260426-1830
+ARG CACHE_BUST=2026-04-26T18-45-00-Z
 
 ENV MAVEN_VERSION=3.9.15
 ENV MAVEN_HOME=/opt/maven
 ENV NODE_VERSION=20
 ENV NPM_CONFIG_REGISTRY=https://registry.npmmirror.com
+ENV BUILD_ID=${CACHE_BUST}
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl && \
+RUN echo "=== BUILD ${BUILD_ID} ===" && \
+    apt-get update && apt-get install -y --no-install-recommends curl && \
     curl -fSL -o /tmp/maven.tar.gz "https://dlcdn.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz" || \
     curl -fSL -o /tmp/maven.tar.gz "https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz" && \
     tar xzf /tmp/maven.tar.gz -C /opt && rm /tmp/maven.tar.gz && \
@@ -19,19 +21,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && \
     ln -s ${MAVEN_HOME}/bin/mvn /usr/local/bin/mvn && \
     curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - && \
     apt-get install -y nodejs && \
+    mvn --version && node --version && npm --version && \
     apt-get purge -y curl && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-RUN echo "Build timestamp: ${CACHE_BUST}" && mvn --version && node --version && npm --version
-
 COPY frontend/package.json frontend/package-lock.json /app/frontend/
 
-RUN cd /app/frontend && npm ci --no-optional 2>&1 || npm install --include=dev 2>&1
+RUN cd /app/frontend && npm ci 2>&1 || npm install 2>&1 && \
+    echo "=== Installed packages ===" && \
+    ls node_modules/@vitejs/plugin-vue/package.json 2>&1 || echo "WARNING: @vitejs/plugin-vue NOT FOUND"
 
 COPY frontend/ /app/frontend/
 
-RUN cd /app/frontend && ls -la node_modules/@vitejs/plugin-vue/ 2>&1 && npm run build 2>&1
+RUN cd /app/frontend && npm run build 2>&1
 
 WORKDIR /app/backend
 
