@@ -2,23 +2,24 @@ import axios from 'axios'
 
 // 获取API基础URL（支持多环境配置）
 function getBaseURL() {
-  // 优先使用环境变量
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return `${import.meta.env.VITE_API_BASE_URL}/api`
+  // 优先使用环境变量（仅在有实际值时使用）
+  const envBaseUrl = import.meta.env.VITE_API_BASE_URL
+  if (envBaseUrl && envBaseUrl.trim() !== '') {
+    return `${envBaseUrl.trim()}/api`
   }
 
-  // 生产环境：使用当前域名（适配 c2cmarket.store 等生产域名）
+  // 生产环境：使用相对路径（前后端一体化部署）
+  // 空字符串会让 axios 自动使用当前域名，实现同源请求
+  // 例如：https://c2cmarket.store/api/xxx
   const hostname = window.location.hostname
 
-  // 如果是localhost开发环境
+  // 开发环境：localhost 或 127.0.0.1
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost:8080/api'
+    return '/api'  // 使用相对路径，由 vite proxy 转发到后端
   }
 
-  // 生产环境：自动使用当前域名的API
-  // 例如：c2cmarket.store -> https://c2cmarket.store/api
-  const protocol = window.location.protocol
-  return `${protocol}//${hostname}/api`
+  // 其他生产环境：返回空字符串，axios 会自动使用当前 origin
+  return ''
 }
 
 // 创建axios实例
@@ -346,8 +347,17 @@ class WebSocketManager {
       return
     }
 
+    const hostname = window.location.hostname
+    const isDev = hostname === 'localhost' || hostname === '127.0.0.1'
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+    
+    // 开发环境：使用 localhost:8080
+    // 生产环境：使用当前域名的 wss/ws 协议（前后端一体化部署）
     const wsUrl = import.meta.env.VITE_WS_URL || 
-      `ws://${window.location.hostname}:8080/ws/chat`
+      (isDev 
+        ? `ws://localhost:8080/ws/chat`
+        : `${protocol}://${hostname}/ws/chat`
+      )
 
     try {
       this.ws = new WebSocket(`${wsUrl}?token=${token}`)
