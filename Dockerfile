@@ -1,40 +1,38 @@
-# Full-stack Docker build - Campus Market v1.1.4
-# Build order: Frontend(Vite) -> Backend(Maven) -> Runtime(JRE)
-# DEPLOY: v1.1.4-COMPLETE-REBUILD-2026-04-26
+# Campus Market v1.2.0 - Multi-stage Docker Build
+# Stage 1: Node.js (Frontend Build)
+# Stage 2: Java JDK (Backend Build)
+# Stage 3: Java JRE (Runtime)
 
-FROM eclipse-temurin:21-jdk AS build
+# ============================================
+# STAGE 1: Build Frontend with Node.js
+# ============================================
+FROM node:20-alpine AS frontend-build
 
-ARG CACHE_BUST=2026-04-26T18-45-00-Z
+WORKDIR /app/frontend
 
-ENV MAVEN_VERSION=3.9.15
+COPY frontend/package.json frontend/package-lock.json ./
+
+RUN npm ci
+
+COPY frontend/ ./
+
+RUN npm run build && ls -la dist/
+
+# ============================================
+# STAGE 2: Build Backend with Java JDK
+# ============================================
+FROM eclipse-temurin:21-jdk AS backend-build
+
+ARG MAVEN_VERSION=3.9.15
 ENV MAVEN_HOME=/opt/maven
-ENV NODE_VERSION=20
-ENV NPM_CONFIG_REGISTRY=https://registry.npmmirror.com
-ENV BUILD_ID=${CACHE_BUST}
 
-RUN echo "=== BUILD ${BUILD_ID} ===" && \
-    apt-get update && apt-get install -y --no-install-recommends curl && \
+RUN apt-get update && apt-get install -y --no-install-recommends curl && \
     curl -fSL -o /tmp/maven.tar.gz "https://dlcdn.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz" || \
     curl -fSL -o /tmp/maven.tar.gz "https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz" && \
     tar xzf /tmp/maven.tar.gz -C /opt && rm /tmp/maven.tar.gz && \
     ln -s /opt/apache-maven-${MAVEN_VERSION} ${MAVEN_HOME} && \
     ln -s ${MAVEN_HOME}/bin/mvn /usr/local/bin/mvn && \
-    curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - && \
-    apt-get install -y nodejs && \
-    mvn --version && node --version && npm --version && \
     apt-get purge -y curl && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-COPY frontend/package.json frontend/package-lock.json /app/frontend/
-
-RUN cd /app/frontend && npm ci 2>&1 || npm install 2>&1 && \
-    echo "=== Installed packages ===" && \
-    ls node_modules/@vitejs/plugin-vue/package.json 2>&1 || echo "WARNING: @vitejs/plugin-vue NOT FOUND"
-
-COPY frontend/ /app/frontend/
-
-RUN cd /app/frontend && npm run build 2>&1
 
 WORKDIR /app/backend
 
@@ -44,12 +42,15 @@ RUN mvn dependency:go-offline -B --no-transfer-progress || true
 
 COPY backend/src ./src
 
-RUN mkdir -p src/main/resources/static && \
-    cp -r /app/frontend/dist/* src/main/resources/static/ 2>/dev/null || true && \
-    ls -la src/main/resources/static/
+RUN mkdir -p src/main/resources/static
 
-RUN mvn clean package -DskipTests -B --no-transfer-progress
+COPY --from=frontend-build /app/frontend/dist/ src/main/resources/static/
 
+RUN ls -la src/main/resources/static/ && mvn clean package -DskipTests -B --no-transfer-progress
+
+# ============================================
+# STAGE 3: Runtime with Java JRE
+# ============================================
 FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
@@ -57,7 +58,7 @@ WORKDIR /app
 ENV TZ=Asia/Shanghai
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-COPY --from=build /app/backend/target/backend-0.0.1-SNAPSHOT.jar ./backend.jar
+COPY --from=backend-build /app/backend/target/backend-0.0.1-SNAPSHOT.jar ./backend.jar
 
 COPY start.sh ./start.sh
 RUN chmod +x ./start.sh
