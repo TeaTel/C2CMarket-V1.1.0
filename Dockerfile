@@ -1,10 +1,10 @@
-# Full-stack Docker build - Campus Market v1.1.2
+# Full-stack Docker build - Campus Market v1.1.3
 # Build order: Frontend(Vite) -> Backend(Maven) -> Runtime(JRE)
-# DEPLOY: v1.1.2-MAVEN-FIX-2026-04-26
+# DEPLOY: v1.1.3-NPM-FIX-2026-04-26
 
 FROM eclipse-temurin:21-jdk AS build
 
-ARG CACHE_BUST=v1.1.2-maven-fix-20260426-1800
+ARG CACHE_BUST=v1.1.3-npm-fix-20260426-1830
 
 ENV MAVEN_VERSION=3.9.15
 ENV MAVEN_HOME=/opt/maven
@@ -25,12 +25,13 @@ WORKDIR /app
 
 RUN echo "Build timestamp: ${CACHE_BUST}" && mvn --version && node --version && npm --version
 
-COPY frontend/package.json frontend/package-lock.json* /app/frontend/
-RUN cd /app/frontend && npm ci --prefer-offline 2>/dev/null || npm install
+COPY frontend/package.json frontend/package-lock.json /app/frontend/
+
+RUN cd /app/frontend && npm ci --no-optional 2>&1 || npm install --include=dev 2>&1
 
 COPY frontend/ /app/frontend/
 
-RUN cd /app/frontend && npm run build
+RUN cd /app/frontend && ls -la node_modules/@vitejs/plugin-vue/ 2>&1 && npm run build 2>&1
 
 WORKDIR /app/backend
 
