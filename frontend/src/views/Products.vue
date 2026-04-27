@@ -1,13 +1,11 @@
 <template>
   <div class="products-page">
-    <!-- 顶部搜索栏 -->
     <header class="search-header">
       <button @click="$router.back()" class="back-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <polyline points="15,18 9,12 15,6"/>
         </svg>
       </button>
-
       <div class="search-bar">
         <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <circle cx="11" cy="11" r="8"/>
@@ -23,7 +21,6 @@
       </div>
     </header>
 
-    <!-- 筛选器 -->
     <section class="filter-section">
       <div class="filter-tabs">
         <button
@@ -33,69 +30,21 @@
           :class="['filter-tab', { active: activeFilter === tab.key }]"
         >
           {{ tab.label }}
-          <svg
-            v-if="tab.sortable"
-            class="sort-icon"
-            :class="{ desc: sortOrder === 'desc' }"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <polyline points="6,9 12,3 18,9"/>
-            <polyline points="6,15 12,21 18,15"/>
-          </svg>
         </button>
       </div>
-
-      <!-- 分类筛选下拉 -->
       <div v-if="showCategoryFilter" class="category-filter">
         <button
           v-for="cat in categories"
-          :key="cat.id"
+          :key="cat.id || 'all'"
           @click="selectCategory(cat.id)"
           :class="['category-chip', { active: selectedCategoryId === cat.id }]"
         >
           {{ cat.name }}
         </button>
       </div>
-
-      <!-- 价格筛选 -->
-      <div v-if="showPriceFilter" class="price-filter">
-        <div class="price-inputs">
-          <input
-            type="number"
-            v-model.number="priceMin"
-            placeholder="最低价"
-            class="price-input"
-          />
-          <span class="price-separator">-</span>
-          <input
-            type="number"
-            v-model.number="priceMax"
-            placeholder="最高价"
-            class="price-input"
-          />
-        </div>
-        <button @click="applyPriceFilter" class="apply-btn">确定</button>
-      </div>
-
-      <!-- 成色筛选 -->
-      <div v-if="showConditionFilter" class="condition-filter">
-        <button
-          v-for="cond in conditions"
-          :key="cond.value"
-          @click="selectedCondition = cond.value; applyFilters()"
-          :class="['condition-chip', { active: selectedCondition === cond.value }]"
-        >
-          {{ cond.label }}
-        </button>
-      </div>
     </section>
 
-    <!-- 商品网格 -->
     <main class="products-grid-container">
-      <!-- 加载状态 -->
       <div v-if="loading && products.length === 0" class="loading-state">
         <div class="skeleton-grid">
           <div v-for="i in 4" :key="i" class="skeleton-card">
@@ -108,14 +57,18 @@
         </div>
       </div>
 
-      <!-- 空状态 -->
+      <div v-else-if="error && products.length === 0" class="error-state">
+        <div class="error-icon">😔</div>
+        <p class="error-text">{{ error }}</p>
+        <button @click="retryLoad" class="retry-btn">点击重试</button>
+      </div>
+
       <div v-else-if="!loading && products.length === 0" class="empty-state">
         <div class="empty-icon">🔍</div>
         <p class="empty-text">没有找到相关商品</p>
         <button @click="resetFilters" class="reset-btn">重置筛选条件</button>
       </div>
 
-      <!-- 商品列表 -->
       <div v-else class="products-grid">
         <div
           v-for="product in products"
@@ -125,39 +78,44 @@
         >
           <div class="card-image-wrapper">
             <img
-              :src="product.imageUrl || getDefaultImage()"
+              v-if="getProductImage(product)"
+              :src="getProductImage(product)"
               :alt="product.name"
               class="card-image"
               loading="lazy"
+              @error="onImageError"
             />
-            <span v-if="product.condition" class="condition-badge">{{ product.condition }}</span>
+            <div v-else class="card-image-placeholder">
+              <span class="placeholder-icon">{{ getCategoryIcon(product.categoryId) }}</span>
+            </div>
+            <span v-if="product.conditionText && product.conditionText !== '未设置'" class="condition-badge">
+              {{ product.conditionText }}
+            </span>
           </div>
 
           <div class="card-info">
-            <h4 class="card-title line-clamp-2">{{ product.name }}</h4>
+            <h4 class="card-title">{{ product.name }}</h4>
             <div class="card-price-row">
               <span class="current-price">
                 <small>¥</small>{{ formatPrice(product.price) }}
               </span>
-              <span v-if="product.originalPrice > product.price" class="original-price">
+              <span v-if="product.originalPrice && product.originalPrice > product.price" class="original-price">
                 ¥{{ formatPrice(product.originalPrice) }}
               </span>
             </div>
             <div class="card-footer">
-              <span class="seller-name">{{ product.sellerName || '匿名卖家' }}</span>
+              <span class="seller-name">{{ product.sellerName || product.categoryName || '校园卖家' }}</span>
               <span class="publish-time">{{ getTimeAgo(product.createdAt) }}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 加载更多指示器 -->
       <div v-if="loadingMore" class="load-more-indicator">
         <div class="spinner"></div>
         <span>加载中...</span>
       </div>
 
-      <!-- 已到底部 -->
       <div v-if="!hasMore && products.length > 0" class="end-reached">
         - 已经到底啦 -
       </div>
@@ -173,37 +131,26 @@ import { productApi } from '../services/api'
 const route = useRoute()
 const router = useRouter()
 
-// 数据状态
 const products = ref([])
 const loading = ref(true)
 const loadingMore = ref(false)
 const hasMore = ref(true)
+const error = ref(null)
 
-// 搜索和筛选参数
 const searchKeyword = ref('')
 const activeFilter = ref('default')
 const selectedCategoryId = ref(null)
-const selectedCondition = ref('')
-const priceMin = ref(null)
-const priceMax = ref(null)
-const sortOrder = ref('desc')
 
-// 分页
 const currentPage = ref(1)
 const pageSize = 20
 
-// 筛选器显示控制
-const showCategoryFilter = ref(activeFilter.value === 'category')
-const showPriceFilter = ref(activeFilter.value === 'price')
-const showConditionFilter = ref(activeFilter.value === 'condition')
+const showCategoryFilter = ref(false)
 
-// 筛选选项配置
 const filterTabs = [
-  { key: 'default', label: '综合', sortable: false },
-  { key: 'price', label: '价格', sortable: true },
-  { key: 'time', label: '最新', sortable: true },
-  { key: 'category', label: '分类', sortable: false },
-  { key: 'condition', label: '成色', sortable: false }
+  { key: 'default', label: '综合' },
+  { key: 'price', label: '价格' },
+  { key: 'time', label: '最新' },
+  { key: 'category', label: '分类' }
 ]
 
 const categories = [
@@ -216,27 +163,18 @@ const categories = [
   { id: 6, name: '运动户外' }
 ]
 
-const conditions = [
-  { value: '', label: '全部' },
-  { value: '全新', label: '全新' },
-  { value: '几乎全新', label: '几乎全新' },
-  { value: '轻微使用痕迹', label: '轻微使用痕迹' },
-  { value: '明显使用痕迹', label: '明显使用痕迹' }
-]
+const categoryIcons = { 1: '📱', 2: '📚', 3: '🏠', 4: '👕', 5: '💄', 6: '⚽', 7: '✏️', 8: '📦' }
 
 onMounted(async () => {
-  // 从URL查询参数初始化筛选条件
   if (route.query.keyword) {
     searchKeyword.value = route.query.keyword
   }
   if (route.query.categoryId) {
     selectedCategoryId.value = parseInt(route.query.categoryId)
     activeFilter.value = 'category'
+    showCategoryFilter.value = true
   }
-
   await loadProducts()
-
-  // 监听滚动实现无限加载
   window.addEventListener('scroll', handleScroll)
 })
 
@@ -244,16 +182,18 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
 })
 
-// 监听筛选器切换
 watch(activeFilter, (newVal) => {
   showCategoryFilter.value = newVal === 'category'
-  showPriceFilter.value = newVal === 'price'
-  showConditionFilter.value = newVal === 'condition'
+  if (newVal !== 'category') {
+    showCategoryFilter.value = false
+  }
+  currentPage.value = 1
+  loadProducts()
 })
 
-// 加载商品
 async function loadProducts(isLoadMore = false) {
   try {
+    error.value = null
     if (isLoadMore) {
       loadingMore.value = true
     } else {
@@ -262,31 +202,19 @@ async function loadProducts(isLoadMore = false) {
 
     const params = {
       page: currentPage.value,
-      size: pageSize.value,
-      status: 1 // 只获取在售商品
+      size: pageSize,
+      status: 1
     }
 
-    // 应用筛选条件
     if (searchKeyword.value.trim()) {
       params.keyword = searchKeyword.value.trim()
     }
     if (selectedCategoryId.value) {
       params.categoryId = selectedCategoryId.value
     }
-    if (selectedCondition.value) {
-      params.condition = selectedCondition.value
-    }
-    if (priceMin.value) {
-      params.minPrice = priceMin.value
-    }
-    if (priceMax.value) {
-      params.maxPrice = priceMax.value
-    }
-
-    // 排序
     if (activeFilter.value === 'price') {
       params.orderBy = 'price'
-      params.sortOrder = sortOrder.value
+      params.sortOrder = 'asc'
     } else if (activeFilter.value === 'time') {
       params.orderBy = 'createdAt'
       params.sortOrder = 'desc'
@@ -295,7 +223,8 @@ async function loadProducts(isLoadMore = false) {
     const response = await productApi.getProducts(params)
 
     if (response.code === 200) {
-      const newProducts = response.data?.records || []
+      const data = response.data || {}
+      const newProducts = data.list || data.records || data.items || []
 
       if (isLoadMore) {
         products.value = [...products.value, ...newProducts]
@@ -303,15 +232,26 @@ async function loadProducts(isLoadMore = false) {
         products.value = newProducts
       }
 
-      const total = response.data?.total || 0
+      const total = data.total || 0
       hasMore.value = products.value.length < total
+    } else {
+      throw new Error(response.message || '加载商品失败')
     }
-  } catch (error) {
-    console.error('加载商品失败:', error)
+  } catch (err) {
+    console.error('加载商品失败:', err)
+    error.value = err.message || '加载失败，请稍后重试'
+    if (isLoadMore) {
+      currentPage.value--
+    }
   } finally {
     loading.value = false
     loadingMore.value = false
   }
+}
+
+function retryLoad() {
+  currentPage.value = 1
+  loadProducts()
 }
 
 function handleSearch() {
@@ -321,14 +261,6 @@ function handleSearch() {
 
 function selectCategory(categoryId) {
   selectedCategoryId.value = categoryId
-  applyFilters()
-}
-
-function applyPriceFilter() {
-  applyFilters()
-}
-
-function applyFilters() {
   currentPage.value = 1
   loadProducts()
 }
@@ -337,47 +269,60 @@ function resetFilters() {
   searchKeyword.value = ''
   activeFilter.value = 'default'
   selectedCategoryId.value = null
-  selectedCondition.value = ''
-  priceMin.value = null
-  priceMax.value = null
-  sortOrder.value = 'desc'
   currentPage.value = 1
   loadProducts()
 }
 
-// 无限滚动
 function handleScroll() {
   if (loadingMore.value || !hasMore.value) return
-
   const scrollTop = document.documentElement.scrollTop || document.body.scrollTop
   const scrollHeight = document.documentElement.scrollHeight
   const clientHeight = document.documentElement.clientHeight
-
   if (scrollTop + clientHeight >= scrollHeight - 150) {
     currentPage.value++
     loadProducts(true)
   }
 }
 
-// 工具函数
+function getProductImage(product) {
+  if (product.coverImage) return product.coverImage
+  if (product.imageUrls) {
+    try {
+      const urls = typeof product.imageUrls === 'string' ? JSON.parse(product.imageUrls) : product.imageUrls
+      if (Array.isArray(urls) && urls.length > 0) return urls[0]
+    } catch (e) { /* ignore */ }
+  }
+  if (product.imageUrl) return product.imageUrl
+  return null
+}
+
+function onImageError(e) {
+  e.target.style.display = 'none'
+  const placeholder = e.target.nextElementSibling
+  if (placeholder) placeholder.style.display = 'flex'
+}
+
+function getCategoryIcon(categoryId) {
+  return categoryIcons[categoryId] || '📦'
+}
+
 function formatPrice(price) {
+  if (!price) return '0'
   return Number(price).toLocaleString('zh-CN', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
   })
 }
 
-function getDefaultImage() {
-  return 'https://via.placeholder.com/400x300/f5f5f5/999999?text=No+Image'
-}
-
 function getTimeAgo(timestamp) {
   if (!timestamp) return ''
   const diffMs = Date.now() - new Date(timestamp).getTime()
+  const diffMin = Math.floor(diffMs / 60000)
   const diffHour = Math.floor(diffMs / 3600000)
   const diffDay = Math.floor(diffMs / 86400000)
 
-  if (diffHour < 24) return `${diffHour}h前`
+  if (diffMin < 60) return diffMin <= 0 ? '刚刚' : `${diffMin}分钟前`
+  if (diffHour < 24) return `${diffHour}小时前`
   if (diffDay < 30) return `${diffDay}天前`
   return new Date(timestamp).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })
 }
@@ -389,9 +334,6 @@ function getTimeAgo(timestamp) {
   background-color: #f5f5f5;
 }
 
-/* ============================================
-   顶部搜索栏
-   ============================================ */
 .search-header {
   position: sticky;
   top: 0;
@@ -413,6 +355,9 @@ function getTimeAgo(timestamp) {
   color: #333;
   border-radius: 50%;
   flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
 }
 
 .back-btn svg { width: 22px; height: 22px; }
@@ -443,9 +388,6 @@ function getTimeAgo(timestamp) {
   outline: none;
 }
 
-/* ============================================
-   筛选器
-   ============================================ */
 .filter-section {
   background-color: #fff;
   border-bottom: 1px solid #f0f0f0;
@@ -472,7 +414,6 @@ function getTimeAgo(timestamp) {
   background-color: #f5f5f5;
   border-radius: 16px;
   white-space: nowrap;
-  transition: all 0.2s ease;
   border: none;
   cursor: pointer;
 }
@@ -482,18 +423,6 @@ function getTimeAgo(timestamp) {
   color: white;
 }
 
-.filter-tab .sort-icon {
-  width: 12px;
-  height: 12px;
-  opacity: 0.7;
-  transition: transform 0.25s ease;
-}
-
-.filter-tab .sort-icon.desc {
-  transform: rotate(180deg);
-}
-
-/* 分类筛选 */
 .category-filter {
   padding: 12px 16px;
   border-top: 1px solid #f5f5f5;
@@ -510,7 +439,6 @@ function getTimeAgo(timestamp) {
   border-radius: 14px;
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
 }
 
 .category-chip.active {
@@ -519,82 +447,6 @@ function getTimeAgo(timestamp) {
   font-weight: 600;
 }
 
-/* 价格筛选 */
-.price-filter {
-  padding: 12px 16px;
-  border-top: 1px solid #f5f5f5;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.price-inputs {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-}
-
-.price-input {
-  width: 100px;
-  padding: 8px 10px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 13px;
-  text-align: center;
-  outline: none;
-  transition: border-color 0.2s ease;
-}
-
-.price-input:focus {
-  border-color: #FF6A00;
-}
-
-.price-separator {
-  color: #ccc;
-  font-size: 14px;
-}
-
-.apply-btn {
-  padding: 8px 16px;
-  background: linear-gradient(135deg, #FF6A00 0%, #FF8533 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-/* 成色筛选 */
-.condition-filter {
-  padding: 12px 16px;
-  border-top: 1px solid #f5f5f5;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.condition-chip {
-  padding: 6px 14px;
-  font-size: 13px;
-  color: #666;
-  background-color: #f5f5f5;
-  border-radius: 14px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.condition-chip.active {
-  background-color: #E6F7FF;
-  color: #1890FF;
-  font-weight: 600;
-}
-
-/* ============================================
-   商品网格
-   ============================================ */
 .products-grid-container {
   padding: 12px 16px;
 }
@@ -610,7 +462,6 @@ function getTimeAgo(timestamp) {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: all 0.25s ease;
   cursor: pointer;
 }
 
@@ -630,11 +481,20 @@ function getTimeAgo(timestamp) {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
 }
 
-.product-card:hover .card-image {
-  transform: scale(1.05);
+.card-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.card-image-placeholder .placeholder-icon {
+  font-size: 40px;
+  opacity: 0.5;
 }
 
 .condition-badge {
@@ -711,9 +571,6 @@ function getTimeAgo(timestamp) {
   color: #ccc;
 }
 
-/* ============================================
-   加载和空状态
-   ============================================ */
 .loading-state { padding-top: 12px; }
 
 .skeleton-grid {
@@ -759,6 +616,34 @@ function getTimeAgo(timestamp) {
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+.error-state {
+  text-align: center;
+  padding: 80px 32px;
+}
+
+.error-icon {
+  font-size: 56px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.error-text {
+  font-size: 15px;
+  color: #666;
+  margin: 0 0 20px 0;
+}
+
+.retry-btn {
+  background: linear-gradient(135deg, #FF6A00 0%, #FF8533 100%);
+  color: white;
+  padding: 10px 28px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
 }
 
 .empty-state {
