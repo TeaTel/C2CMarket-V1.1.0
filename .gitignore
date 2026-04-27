@@ -64,9 +64,9 @@ temp/
 *.seed
 *.pid.lock
 
-# 配置文件
-*.config.js
-*.config.ts
+# 配置文件（注意：不排除 vite.config.js 等构建配置文件）
+# *.config.js
+# *.config.ts
 
 # 证书文件
 *.pem
