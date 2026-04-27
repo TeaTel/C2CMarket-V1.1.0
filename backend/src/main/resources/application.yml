@@ -8,9 +8,11 @@ spring:
   data:
     redis:
       enabled: false
-  # 禁用Redis自动配置
+  # 禁用Redis自动配置（当前使用内存缓存，Redis 可选）
   autoconfigure:
-    exclude: org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
   health:
     db:
       enabled: true
@@ -30,6 +32,13 @@ mybatis:
     map-underscore-to-camel-case: true
     default-statement-timeout: 3000
     default-fetch-size: 100
+
+# Jackson 序列化配置（支持 LocalDateTime 等 Java 8 日期时间类型）
+spring.jackson:
+  serialization:
+    write-dates-as-timestamps: false
+  date-format: yyyy-MM-dd HH:mm:ss
+  time-zone: Asia/Shanghai
 
 server:
   port: ${PORT:8080}
