@@ -40,6 +40,8 @@ public class ProductQueryDTO {
 
     /** 计算MySQL OFFSET */
     public Integer getOffset() {
-        return size * (page - 1);
+        int safePage = (page == null || page < 1) ? 1 : page;
+        int safeSize = (size == null || size < 1) ? 10 : size;
+        return safeSize * (safePage - 1);
     }
 }

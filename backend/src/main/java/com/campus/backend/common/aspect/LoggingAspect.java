@@ -20,7 +20,11 @@ import java.util.stream.Collectors;
 public class LoggingAspect {
     
     private static final Logger logger = LoggerFactory.getLogger(LoggingAspect.class);
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
+    
+    public LoggingAspect(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
     
     @Pointcut("execution(* com.campus.backend.controller..*.*(..))")
     public void controllerPointcut() {
