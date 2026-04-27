@@ -304,6 +304,31 @@ export const messageApi = {
 }
 
 // ============================================
+// 收藏相关API
+// ============================================
+export const favoriteApi = {
+  addFavorite(productId) {
+    return api.post(`/favorites/${productId}`)
+  },
+
+  removeFavorite(productId) {
+    return api.delete(`/favorites/${productId}`)
+  },
+
+  checkFavorited(productId) {
+    return api.get(`/favorites/${productId}/check`)
+  },
+
+  getMyFavorites(params) {
+    return api.get('/favorites', { params })
+  },
+
+  getFavoriteCount() {
+    return api.get('/favorites/count')
+  }
+}
+
+// ============================================
 // 分类相关API
 // ============================================
 export const categoryApi = {

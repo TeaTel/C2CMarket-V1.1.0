@@ -1,6 +1,5 @@
 <template>
   <div class="profile-page">
-    <!-- 用户信息头部 -->
     <header class="profile-header">
       <div class="header-bg"></div>
       <div class="user-info-card">
@@ -12,12 +11,12 @@
           />
           <span class="edit-avatar-badge">编辑</span>
         </div>
-        <h2 class="user-name">{{ userInfo.nickname || '未设置昵称' }}</h2>
+        <h2 class="user-name">{{ userInfo.nickname || userInfo.username || '未设置昵称' }}</h2>
         <p class="user-id">ID: {{ userInfo.id || '---' }}</p>
         <p v-if="userInfo.bio" class="user-bio">{{ userInfo.bio }}</p>
 
         <div class="stats-row">
-          <div class="stat-item">
+          <div class="stat-item" @click="router.push('/my-products')">
             <span class="stat-value">{{ stats.published }}</span>
             <span class="stat-label">发布</span>
           </div>
@@ -27,7 +26,7 @@
             <span class="stat-label">已售</span>
           </div>
           <div class="stat-divider"></div>
-          <div class="stat-item">
+          <div class="stat-item" @click="router.push('/favorites')">
             <span class="stat-value">{{ stats.favorites }}</span>
             <span class="stat-label">收藏</span>
           </div>
@@ -35,9 +34,7 @@
       </div>
     </header>
 
-    <!-- 功能菜单列表 -->
     <main class="menu-list">
-      <!-- 我的商品 -->
       <section class="menu-group">
         <router-link to="/products/create" class="menu-item highlight">
           <span class="menu-icon publish-icon">+</span>
@@ -47,7 +44,7 @@
           </svg>
         </router-link>
 
-        <router-link to="/profile?tab=my-products" class="menu-item">
+        <router-link to="/my-products" class="menu-item">
           <span class="menu-icon">📦</span>
           <span class="menu-text">我的发布</span>
           <span class="menu-badge" v-if="stats.published > 0">{{ stats.published }}</span>
@@ -67,13 +64,13 @@
         <router-link to="/favorites" class="menu-item">
           <span class="menu-icon">❤️</span>
           <span class="menu-text">我的收藏</span>
+          <span class="menu-badge" v-if="stats.favorites > 0">{{ stats.favorites }}</span>
           <svg class="arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="9,18 15,12 9,6"/>
           </svg>
         </router-link>
       </section>
 
-      <!-- 账户设置 -->
       <section class="menu-group">
         <button @click="goToSettings" class="menu-item">
           <span class="menu-icon">⚙️</span>
@@ -100,7 +97,6 @@
         </a>
       </section>
 
-      <!-- 退出登录 -->
       <section class="menu-group">
         <button @click="handleLogout" class="menu-item danger">
           <span class="menu-icon">🚪</span>
@@ -108,22 +104,54 @@
         </button>
       </section>
 
-      <!-- 版本信息 -->
       <p class="version-info">校园二手 v1.0.0</p>
     </main>
 
-    <!-- 退出登录确认弹窗 -->
     <Teleport to="body">
       <div v-if="showLogoutConfirm" class="logout-modal-overlay" @click="cancelLogout">
         <div class="logout-modal" @click.stop>
           <div class="modal-icon">⚠️</div>
           <h3 class="modal-title">确定要退出登录吗？</h3>
           <p class="modal-desc">退出后需要重新登录才能使用完整功能</p>
-
           <div class="modal-actions">
             <button @click="cancelLogout" class="modal-btn cancel-btn">取消</button>
             <button @click="confirmLogout" class="modal-btn confirm-btn">确定退出</button>
           </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div v-if="showAbout" class="about-modal-overlay" @click="showAbout = false">
+        <div class="about-modal" @click.stop>
+          <div class="about-logo">🎓</div>
+          <h2 class="about-title">校园二手交易平台</h2>
+          <p class="about-version">版本 1.0.0</p>
+          <div class="about-desc">
+            <p>一个专为高校学生打造的二手物品交易平台，让闲置物品流转起来，倡导绿色环保的校园生活方式。</p>
+          </div>
+          <div class="about-features">
+            <div class="feature-item">
+              <span class="feature-icon">🔒</span>
+              <span>安全交易</span>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">💬</span>
+              <span>即时沟通</span>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">📱</span>
+              <span>便捷发布</span>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">🌿</span>
+              <span>绿色环保</span>
+            </div>
+          </div>
+          <div class="about-info">
+            <p>如有问题或建议，请联系：support@campus2c.com</p>
+          </div>
+          <button @click="showAbout = false" class="about-close-btn">我知道了</button>
         </div>
       </div>
     </Teleport>
@@ -134,35 +162,28 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
+import { productApi, favoriteApi } from '../services/api'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
-// 默认头像（SVG base64）
 const defaultAvatar = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0UwRTBFRCIvPjxjaXJjbGUgY3g9IjIwIiBjeT0iMTciIHI9IjgiIGZpbGw9IndoaXRlIi8+PC9zdmc+`
 
-// 用户信息（从store计算）
 const userInfo = computed(() => {
-  // 优先使用store中的用户信息
   if (authStore.currentUser.value) {
     return authStore.currentUser.value
   }
-
-  // 备用：从localStorage读取
   const storedUser = localStorage.getItem('user')
   if (storedUser) {
     try {
       return JSON.parse(storedUser)
     } catch (e) {
-      console.error('解析用户信息失败:', e)
       return {}
     }
   }
-
   return {}
 })
 
-// 统计数据
 const stats = reactive({
   published: 0,
   sold: 0,
@@ -170,36 +191,42 @@ const stats = reactive({
 })
 
 const showAbout = ref(false)
-const showLogoutConfirm = ref(false) // 控制退出登录确认弹窗
+const showLogoutConfirm = ref(false)
 
 onMounted(async () => {
-  // 尝试从API获取最新用户信息
   if (authStore.isAuthenticated.value) {
     await fetchUserInfo()
     await fetchStats()
   }
 })
 
-// 获取用户信息
 async function fetchUserInfo() {
   try {
-    const result = await authStore.fetchUserInfo()
-    if (result.success) {
-      console.log('用户信息已更新')
-    }
+    await authStore.fetchUserInfo()
   } catch (error) {
     console.error('获取用户信息失败:', error)
-    // 静默失败，使用缓存数据
   }
 }
 
-// 获取统计数据（模拟，实际应从API获取）
 async function fetchStats() {
-  // TODO: 替换为实际的API调用
-  // 这里使用模拟数据，实际项目中应该调用统计接口
-  stats.published = Math.floor(Math.random() * 10)
-  stats.sold = Math.floor(Math.random() * 5)
-  stats.favorites = Math.floor(Math.random() * 20)
+  try {
+    const [myProductsRes, favCountRes] = await Promise.allSettled([
+      productApi.getMyProducts(),
+      favoriteApi.getFavoriteCount()
+    ])
+
+    if (myProductsRes.status === 'fulfilled' && myProductsRes.value.code === 200) {
+      const products = myProductsRes.value.data || []
+      stats.published = products.length
+      stats.sold = products.filter(p => p.status === 2).length
+    }
+
+    if (favCountRes.status === 'fulfilled' && favCountRes.value.code === 200) {
+      stats.favorites = favCountRes.value.data || 0
+    }
+  } catch (error) {
+    console.error('获取统计数据失败:', error)
+  }
 }
 
 function handleAvatarClick() {
@@ -210,20 +237,15 @@ function goToSettings() {
   router.push('/settings')
 }
 
-// 显示退出确认弹窗
 function handleLogout() {
   showLogoutConfirm.value = true
 }
 
-// 确认退出登录
 function confirmLogout() {
   showLogoutConfirm.value = false
-
-  // 调用authStore的logout方法（自动清除所有状态并跳转）
   authStore.logout()
 }
 
-// 取消退出
 function cancelLogout() {
   showLogoutConfirm.value = false
 }
@@ -235,9 +257,6 @@ function cancelLogout() {
   background-color: #f5f5f5;
 }
 
-/* ============================================
-   用户信息头部
-   ============================================ */
 .profile-header {
   position: relative;
   padding-bottom: 20px;
@@ -310,7 +329,6 @@ function cancelLogout() {
   line-height: 1.5;
 }
 
-/* 统计数据 */
 .stats-row {
   display: flex;
   align-items: center;
@@ -326,6 +344,7 @@ function cancelLogout() {
   flex-direction: column;
   align-items: center;
   gap: 4px;
+  cursor: pointer;
 }
 
 .stat-value {
@@ -346,9 +365,6 @@ function cancelLogout() {
   background-color: #f0f0f0;
 }
 
-/* ============================================
-   菜单列表
-   ============================================ */
 .menu-list {
   padding: 12px 16px;
 }
@@ -452,9 +468,6 @@ function cancelLogout() {
   margin-top: 24px;
 }
 
-/* ============================================
-   退出登录确认弹窗
-   ============================================ */
 .logout-modal-overlay {
   position: fixed;
   top: 0;
@@ -487,14 +500,8 @@ function cancelLogout() {
 }
 
 @keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .modal-icon {
@@ -551,6 +558,103 @@ function cancelLogout() {
 .confirm-btn:active {
   background-color: #cf1322;
   transform: scale(0.98);
-  box-shadow: 0 2px 6px rgba(255, 77, 79, 0.35);
+}
+
+.about-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+.about-modal {
+  background-color: #fff;
+  border-radius: 20px;
+  padding: 32px 24px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  animation: slideUp 0.25s ease;
+}
+
+.about-logo {
+  font-size: 56px;
+  margin-bottom: 12px;
+}
+
+.about-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 4px;
+}
+
+.about-version {
+  font-size: 13px;
+  color: #999;
+  margin: 0 0 16px;
+}
+
+.about-desc {
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.about-desc p {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.about-features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #f8f8f8;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #333;
+  font-weight: 500;
+}
+
+.feature-icon {
+  font-size: 18px;
+}
+
+.about-info {
+  margin-bottom: 20px;
+}
+
+.about-info p {
+  font-size: 12px;
+  color: #bbb;
+  margin: 0;
+}
+
+.about-close-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #FF6A00, #FF8533);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
 }
 </style>

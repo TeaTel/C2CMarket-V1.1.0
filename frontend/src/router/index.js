@@ -98,6 +98,33 @@ const routes = [
     }
   },
   {
+    path: '/my-products',
+    name: 'MyProducts',
+    component: () => import('../views/MyProducts.vue'),
+    meta: {
+      requiresAuth: true,
+      title: '我的发布'
+    }
+  },
+  {
+    path: '/favorites',
+    name: 'Favorites',
+    component: () => import('../views/Favorites.vue'),
+    meta: {
+      requiresAuth: true,
+      title: '我的收藏'
+    }
+  },
+  {
+    path: '/address',
+    name: 'Address',
+    component: () => import('../views/Address.vue'),
+    meta: {
+      requiresAuth: true,
+      title: '收货地址'
+    }
+  },
+  {
     path: '/settings',
     name: 'Settings',
     component: () => import('../views/Settings.vue'),
