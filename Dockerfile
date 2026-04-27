@@ -1,4 +1,4 @@
-# Campus Market v1.2.0 - Multi-stage Docker Build
+# Campus Market v1.2.1 - Multi-stage Docker Build
 # Stage 1: Node.js (Frontend Build)
 # Stage 2: Java JDK (Backend Build)
 # Stage 3: Java JRE (Runtime)
@@ -10,9 +10,20 @@ FROM node:20-alpine AS frontend-build
 
 WORKDIR /app/frontend
 
+ENV NODE_ENV=development
+
 COPY frontend/package.json ./
 
-RUN npm install
+RUN npm install --include=dev 2>&1 && \
+    echo "=== NODE_ENV: $NODE_ENV ===" && \
+    echo "=== Direct dependencies ===" && \
+    npm ls --depth=0 2>&1 && \
+    echo "=== Total packages in node_modules ===" && \
+    find node_modules -maxdepth 2 -name "package.json" -not -path "*/node_modules/*/node_modules/*" | wc -l && \
+    echo "=== Verifying @vitejs/plugin-vue ===" && \
+    test -f node_modules/@vitejs/plugin-vue/package.json && echo "OK: @vitejs/plugin-vue found" || echo "ERROR: @vitejs/plugin-vue NOT FOUND" && \
+    echo "=== Verifying vite ===" && \
+    test -f node_modules/vite/package.json && echo "OK: vite found" || echo "ERROR: vite NOT FOUND"
 
 COPY frontend/ ./
 
