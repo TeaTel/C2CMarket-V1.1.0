@@ -18,8 +18,8 @@ function getBaseURL() {
     return '/api'  // 使用相对路径，由 vite proxy 转发到后端
   }
 
-  // 其他生产环境：返回空字符串，axios 会自动使用当前 origin
-  return ''
+  // 其他生产环境：使用 /api 前缀
+  return '/api'
 }
 
 // 创建axios实例
@@ -236,62 +236,62 @@ export const orderApi = {
 export const messageApi = {
   // 发送消息
   sendMessage(data) {
-    return api.post('/messages', data)
+    return api.post('/chat/messages', data)
   },
 
   // 获取对话记录（分页）
-  getConversation(otherUserId, params = {}) {
-    return api.get(`/messages/conversation/${otherUserId}`, { params })
+  getConversation(conversationId, params = {}) {
+    return api.get(`/chat/conversations/${conversationId}/messages`, { params })
   },
 
   // 获取联系人/会话列表
   getContacts() {
-    return api.get('/messages/contacts')
+    return api.get('/chat/conversations')
   },
 
   // 获取未读消息列表
   getUnreadMessages() {
-    return api.get('/messages/unread')
+    return api.get('/chat/conversations')
   },
 
   // 标记单条消息为已读
   markAsRead(messageId) {
-    return api.put(`/messages/${messageId}/read`)
+    return api.put(`/chat/messages/${messageId}/read`)
   },
 
   // 标记整个对话为已读
-  markConversationAsRead(senderId) {
-    return api.put(`/messages/conversation/${senderId}/read`)
+  markConversationAsRead(conversationId) {
+    return api.put(`/chat/conversations/${conversationId}/read`)
   },
 
   // 获取未读消息数量
   getUnreadCount() {
-    return api.get('/messages/unread/count')
+    return api.get('/chat/unread/count')
   },
 
   // 删除消息
   deleteMessage(messageId) {
-    return api.delete(`/messages/${messageId}`)
+    return api.delete(`/chat/messages/${messageId}`)
   },
 
   // 撤回消息（发送后2分钟内）
   recallMessage(messageId) {
-    return api.put(`/messages/${messageId}/recall`)
+    return api.put(`/chat/messages/${messageId}/recall`)
   },
 
   // 获取最近的消息预览（用于首页展示）
   getRecentMessages(limit = 10) {
-    return api.get('/messages/recent', { params: { limit } })
+    return api.get('/chat/conversations', { params: { limit } })
   },
 
   // 创建会话（如果不存在则创建）
   createConversation(userId, productId) {
-    return api.post('/messages/conversation', { userId, productId })
+    return api.post('/chat/messages', { userId, productId })
   },
 
   // 获取与某用户的会话ID
   getConversationId(otherUserId) {
-    return api.get(`/messages/conversation-id/${otherUserId}`)
+    return api.get('/chat/conversations')
   }
 }
 
