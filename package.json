@@ -28,7 +28,9 @@
     "spring-boot",
     "fullstack"
   ],
-  "dependencies": {},
+  "dependencies": {
+    "playwright": "^1.59.1"
+  },
   "author": "TeaTel",
   "license": "MIT",
   "repository": {

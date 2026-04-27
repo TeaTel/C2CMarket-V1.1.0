@@ -155,6 +155,14 @@ export const userApi = {
     return api.post('/v2/users/avatar', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
+  },
+
+  sendResetCode(account) {
+    return api.post('/v2/users/reset-password/send-code', { account })
+  },
+
+  verifyAndResetPassword(account, verifyCode, newPassword) {
+    return api.post('/v2/users/reset-password/verify', { account, verifyCode, newPassword })
   }
 }
 

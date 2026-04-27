@@ -43,4 +43,13 @@ public interface UserService {
      * 获取用户实体（内部使用，如其他Service调用）
      */
     User getUserEntityById(Long userId);
+    /**
+     * 发送重置密码验证码
+     */
+    void sendResetCode(String account);
+
+    /**
+     * 验证并重置密码（通过邮箱/手机号+验证码）
+     */
+    void verifyAndResetPassword(String account, String verifyCode, String newPassword);
 }

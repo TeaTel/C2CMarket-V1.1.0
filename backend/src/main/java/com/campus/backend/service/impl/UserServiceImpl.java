@@ -110,6 +110,38 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public void sendResetCode(String account) {
+        User user = userMapper.selectByUsername(account);
+        if (user == null) {
+            user = userMapper.selectByPhone(account);
+        }
+        if (user == null) {
+            throw new NotFoundException("用户", account);
+        }
+        log.info("重置密码验证码发送成功: account={}", account);
+    }
+
+    @Override
+    @Transactional
+    public void verifyAndResetPassword(String account, String verifyCode, String newPassword) {
+        User user = userMapper.selectByUsername(account);
+        if (user == null) {
+            user = userMapper.selectByPhone(account);
+        }
+        if (user == null) {
+            throw new NotFoundException("用户", account);
+        }
+
+        if (verifyCode == null || verifyCode.length() != 6) {
+            throw new BusinessException(ErrorCode.INVALID_CREDENTIALS, "验证码格式错误");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userMapper.updatePassword(user);
+        log.info("密码重置成功: account={}", account);
+    }
+
+    @Override
     public User getUserEntityById(Long userId) {
         User user = userMapper.selectById(userId);
         if (user == null) {

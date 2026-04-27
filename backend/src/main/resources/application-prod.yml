@@ -20,7 +20,7 @@ spring:
       encoding: UTF-8
       mode: always
       continue-on-error: true
-      schema-locations: classpath:migration-v2.sql
+      schema-locations: classpath:migration-v3.sql
       data-locations: classpath:data-mysql.sql
   
   # 关键修复：禁用延迟初始化确保所有Bean立即创建

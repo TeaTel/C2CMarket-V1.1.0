@@ -81,4 +81,29 @@ public class UserApi {
         );
         return Result.success("密码修改成功");
     }
+
+    @PostMapping("/reset-password/send-code")
+    @Operation(summary = "发送重置密码验证码")
+    public Result<Void> sendResetCode(@RequestBody Map<String, String> body) {
+        String account = body.get("account");
+        if (account == null || account.trim().isEmpty()) {
+            return Result.error("请提供邮箱或手机号");
+        }
+        userService.sendResetCode(account);
+        return Result.success("验证码已发送");
+    }
+
+    @PostMapping("/reset-password/verify")
+    @Operation(summary = "验证并重置密码")
+    public Result<Void> verifyAndResetPassword(@RequestBody Map<String, String> body) {
+        String account = body.get("account");
+        String verifyCode = body.get("verifyCode");
+        String newPassword = body.get("newPassword");
+
+        if (account == null || verifyCode == null || newPassword == null) {
+            return Result.error("参数不完整");
+        }
+        userService.verifyAndResetPassword(account, verifyCode, newPassword);
+        return Result.success("密码重置成功");
+    }
 }

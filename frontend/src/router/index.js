@@ -20,6 +20,12 @@ const routes = [
     meta: { title: '注册' }
   },
   {
+    path: '/forgot-password',
+    name: 'ForgotPassword',
+    component: () => import('../views/ForgotPassword.vue'),
+    meta: { title: '找回密码' }
+  },
+  {
     path: '/products',
     name: 'Products',
     component: () => import('../views/Products.vue'),
@@ -115,7 +121,7 @@ const router = createRouter({
 })
 
 // 白名单路径（无需登录即可访问）
-const publicPaths = ['/', '/login', '/register', '/products', '/products/:id', '/categories']
+const publicPaths = ['/', '/login', '/register', '/forgot-password', '/products', '/products/:id', '/categories']
 
 // 全局前置守卫
 router.beforeEach((to, from, next) => {
