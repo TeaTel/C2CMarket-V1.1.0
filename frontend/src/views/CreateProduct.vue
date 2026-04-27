@@ -1,6 +1,5 @@
 <template>
   <div class="create-product-page">
-    <!-- 顶部导航 -->
     <header class="page-header">
       <button @click="$router.back()" class="back-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -12,23 +11,28 @@
         @click="handleSubmit"
         :disabled="submitting || !isFormValid"
         class="publish-btn"
-        :class="{ active: isFormValid }"
+        :class="{ active: isFormValid && !submitting }"
       >
         {{ submitting ? '发布中...' : '发布' }}
       </button>
     </header>
 
-    <!-- 表单内容 -->
     <main class="form-content">
-      <!-- 图片上传区 -->
       <section class="upload-section">
+        <div class="section-title">商品图片</div>
         <div class="image-grid">
           <div
             v-for="(img, index) in imageList"
             :key="index"
             class="image-item"
           >
-            <img :src="img" alt="" class="preview-image" />
+            <img :src="img.url" alt="" class="preview-image" />
+            <div v-if="img.uploading" class="image-uploading">
+              <div class="upload-spinner"></div>
+            </div>
+            <div v-if="img.error" class="image-error-mask">
+              <span>上传失败</span>
+            </div>
             <button @click="removeImage(index)" class="remove-btn">
               <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
                 <line x1="18" y1="6" x2="6" y2="18"/>
@@ -37,7 +41,6 @@
             </button>
           </div>
 
-          <!-- 上传按钮 -->
           <label
             v-if="imageList.length < 9"
             class="upload-trigger"
@@ -59,10 +62,9 @@
             <span class="upload-text">{{ imageList.length }}/9</span>
           </label>
         </div>
-        <p class="upload-tip">第一张为封面图，最多上传9张</p>
+        <p class="upload-tip">第一张为封面图，最多上传9张（选填）</p>
       </section>
 
-      <!-- 商品信息 -->
       <section class="form-section">
         <div class="form-group">
           <label class="form-label required">商品标题</label>
@@ -72,8 +74,12 @@
             placeholder="请输入商品标题（5-30字）"
             maxlength="30"
             class="form-input"
+            :class="{ 'input-error': errors.name }"
+            @blur="validateField('name')"
+            @input="clearError('name')"
           />
           <span class="char-count">{{ formData.name.length }}/30</span>
+          <p v-if="errors.name" class="error-text">{{ errors.name }}</p>
         </div>
 
         <div class="form-group">
@@ -84,14 +90,18 @@
             rows="4"
             maxlength="500"
             class="form-textarea"
+            :class="{ 'input-error': errors.description }"
+            @blur="validateField('description')"
+            @input="clearError('description')"
           ></textarea>
           <span class="char-count">{{ formData.description.length }}/500</span>
+          <p v-if="errors.description" class="error-text">{{ errors.description }}</p>
         </div>
 
         <div class="form-row">
           <div class="form-group half">
             <label class="form-label required">价格（元）</label>
-            <div class="price-input-wrapper">
+            <div class="price-input-wrapper" :class="{ 'input-error-border': errors.price }">
               <span class="price-prefix">¥</span>
               <input
                 type="number"
@@ -100,8 +110,11 @@
                 min="0"
                 step="0.01"
                 class="form-input price-input"
+                @blur="validateField('price')"
+                @input="clearError('price')"
               />
             </div>
+            <p v-if="errors.price" class="error-text">{{ errors.price }}</p>
           </div>
 
           <div class="form-group half">
@@ -122,12 +135,19 @@
 
         <div class="form-group">
           <label class="form-label required">分类</label>
-          <select v-model="formData.categoryId" class="form-select">
+          <select
+            v-model="formData.categoryId"
+            class="form-select"
+            :class="{ 'input-error': errors.categoryId }"
+            @change="clearError('categoryId')"
+          >
             <option value="">请选择分类</option>
             <option v-for="cat in categories" :key="cat.id" :value="cat.id">
               {{ cat.name }}
             </option>
           </select>
+          <p v-if="errors.categoryId" class="error-text">{{ errors.categoryId }}</p>
+          <p v-if="categoriesLoading" class="loading-hint">加载分类中...</p>
         </div>
 
         <div class="form-group">
@@ -136,10 +156,25 @@
             <button
               v-for="cond in conditions"
               :key="cond.value"
-              @click="formData.condition = cond.value"
-              :class="['condition-option', { active: formData.condition === cond.value }]"
+              @click="selectCondition(cond.value)"
+              :class="['condition-option', { active: formData.conditionLevel === cond.value }]"
             >
               {{ cond.label }}
+            </button>
+          </div>
+          <p v-if="errors.conditionLevel" class="error-text">{{ errors.conditionLevel }}</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">交付方式</label>
+          <div class="condition-options">
+            <button
+              v-for="dm in deliveryMethods"
+              :key="dm.value"
+              @click="formData.deliveryMethod = dm.value"
+              :class="['condition-option', { active: formData.deliveryMethod === dm.value }]"
+            >
+              {{ dm.label }}
             </button>
           </div>
         </div>
@@ -155,7 +190,6 @@
         </div>
       </section>
 
-      <!-- 发布须知 -->
       <section class="notice-section">
         <h3 class="notice-title">发布须知</h3>
         <ul class="notice-list">
@@ -166,84 +200,210 @@
         </ul>
       </section>
     </main>
+
+    <transition name="toast-fade">
+      <div v-if="toast.show" :class="['toast-container', `toast-${toast.type}`]">
+        <svg v-if="toast.type === 'success'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="toast-icon">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <svg v-else-if="toast.type === 'error'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="toast-icon">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="15" y1="9" x2="9" y2="15"/>
+          <line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="toast-icon">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span class="toast-message">{{ toast.message }}</span>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
-import { productApi } from '../services/api'
+import { productApi, categoryApi } from '../services/api'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
-// 表单数据
 const formData = ref({
   name: '',
   description: '',
   price: null,
   originalPrice: null,
   categoryId: '',
-  condition: '几乎全新',
+  conditionLevel: null,
+  deliveryMethod: 3,
   location: ''
 })
 
 const imageList = ref([])
 const submitting = ref(false)
+const categories = ref([])
+const categoriesLoading = ref(false)
 
-// 分类选项
-const categories = [
-  { id: 1, name: '数码电子' },
-  { id: 2, name: '书籍教材' },
-  { id: 3, name: '生活日用' },
-  { id: 4, name: '服饰鞋包' },
-  { id: 5, name: '美妆护肤' },
-  { id: 6, name: '运动户外' }
-]
+const errors = reactive({
+  name: '',
+  description: '',
+  price: '',
+  categoryId: '',
+  conditionLevel: ''
+})
+
+const toast = reactive({
+  show: false,
+  message: '',
+  type: 'info'
+})
 
 const conditions = [
-  { value: '全新', label: '全新' },
-  { value: '几乎全新', label: '几乎全新' },
-  { value: '轻微使用痕迹', label: '轻微使用痕迹' },
-  { value: '明显使用痕迹', label: '明显使用痕迹' }
+  { value: 1, label: '全新' },
+  { value: 2, label: '几乎全新' },
+  { value: 3, label: '轻微使用痕迹' },
+  { value: 4, label: '明显使用痕迹' },
+  { value: 5, label: '一般' }
 ]
 
-// 表单验证
+const deliveryMethods = [
+  { value: 1, label: '自提' },
+  { value: 2, label: '快递' },
+  { value: 3, label: '均可' }
+]
+
+function selectCondition(value) {
+  formData.value.conditionLevel = value
+  if (errors.conditionLevel) errors.conditionLevel = ''
+}
+
+function showToast(message, type = 'info', duration = 2500) {
+  toast.show = true
+  toast.message = message
+  toast.type = type
+  setTimeout(() => {
+    toast.show = false
+  }, duration)
+}
+
+function validateField(field) {
+  switch (field) {
+    case 'name':
+      if (!formData.value.name.trim()) {
+        errors.name = '请输入商品标题'
+      } else if (formData.value.name.trim().length < 5) {
+        errors.name = '标题至少5个字符'
+      } else {
+        errors.name = ''
+      }
+      break
+    case 'description':
+      if (!formData.value.description.trim()) {
+        errors.description = '请输入商品描述'
+      } else {
+        errors.description = ''
+      }
+      break
+    case 'price':
+      if (formData.value.price === null || formData.value.price === '') {
+        errors.price = '请输入价格'
+      } else if (formData.value.price <= 0) {
+        errors.price = '价格必须大于0'
+      } else {
+        errors.price = ''
+      }
+      break
+    case 'categoryId':
+      if (!formData.value.categoryId) {
+        errors.categoryId = '请选择分类'
+      } else {
+        errors.categoryId = ''
+      }
+      break
+    case 'conditionLevel':
+      if (!formData.value.conditionLevel) {
+        errors.conditionLevel = '请选择成色'
+      } else {
+        errors.conditionLevel = ''
+      }
+      break
+  }
+}
+
+function clearError(field) {
+  errors[field] = ''
+}
+
+function validateAll() {
+  validateField('name')
+  validateField('description')
+  validateField('price')
+  validateField('categoryId')
+  validateField('conditionLevel')
+  return !errors.name && !errors.description && !errors.price && !errors.categoryId && !errors.conditionLevel
+}
+
 const isFormValid = computed(() => {
   return (
     formData.value.name.trim().length >= 5 &&
     formData.value.description.trim().length > 0 &&
     formData.value.price > 0 &&
     formData.value.categoryId !== '' &&
-    formData.value.condition !== '' &&
-    imageList.value.length > 0
+    formData.value.conditionLevel !== null
   )
 })
 
-// 图片上传处理
+async function loadCategories() {
+  categoriesLoading.value = true
+  try {
+    const response = await categoryApi.getCategories()
+    if (response.code === 200 && response.data) {
+      categories.value = response.data.map(cat => ({
+        id: cat.id,
+        name: cat.name
+      }))
+    }
+  } catch (e) {
+    console.warn('加载分类失败，使用默认分类', e)
+    categories.value = [
+      { id: 1, name: '数码电子' },
+      { id: 2, name: '书籍教材' },
+      { id: 3, name: '生活日用' },
+      { id: 4, name: '服饰鞋包' },
+      { id: 5, name: '美妆护肤' },
+      { id: 6, name: '运动户外' }
+    ]
+  } finally {
+    categoriesLoading.value = false
+  }
+}
+
 function handleImageUpload(event) {
   const files = Array.from(event.target.files)
-  
+
   files.forEach(file => {
     if (imageList.value.length >= 9) return
-    
-    // 验证文件类型
+
     if (!file.type.startsWith('image/')) {
-      alert('请选择图片文件')
+      showToast('请选择图片文件', 'error')
       return
     }
 
-    // 验证文件大小（最大5MB）
     if (file.size > 5 * 1024 * 1024) {
-      alert('图片大小不能超过5MB')
+      showToast('图片大小不能超过5MB', 'error')
       return
     }
 
-    // 创建预览URL
     const reader = new FileReader()
     reader.onload = (e) => {
-      imageList.value.push(e.target.result)
+      imageList.value.push({
+        url: e.target.result,
+        uploading: false,
+        error: false
+      })
     }
     reader.readAsDataURL(file)
   })
@@ -255,34 +415,73 @@ function removeImage(index) {
   imageList.value.splice(index, 1)
 }
 
-// 提交表单
 async function handleSubmit() {
   if (!isFormValid.value || submitting.value) return
+
+  if (!validateAll()) {
+    showToast('请完善必填信息', 'error')
+    return
+  }
+
+  if (!authStore.isAuthenticated) {
+    showToast('请先登录', 'error')
+    router.push({ path: '/login', query: { redirect: '/products/create' } })
+    return
+  }
 
   try {
     submitting.value = true
 
+    const imageUrls = imageList.value.map(img => img.url)
+    const coverImage = imageUrls.length > 0 ? imageUrls[0] : null
+
     const productData = {
-      ...formData.value,
-      images: imageList.value,
-      status: 1 // 在售状态
+      name: formData.value.name.trim(),
+      description: formData.value.description.trim(),
+      price: Number(formData.value.price),
+      originalPrice: formData.value.originalPrice ? Number(formData.value.originalPrice) : null,
+      categoryId: Number(formData.value.categoryId),
+      conditionLevel: formData.value.conditionLevel,
+      deliveryMethod: formData.value.deliveryMethod,
+      location: formData.value.location.trim() || null,
+      imageUrls: imageUrls.length > 0 ? imageUrls : null,
+      coverImage: coverImage
     }
 
     const response = await productApi.createProduct(productData)
 
     if (response.code === 200) {
-      alert('发布成功！')
-      router.push('/profile?tab=my-products')
+      showToast('发布成功！', 'success')
+      setTimeout(() => {
+        router.push('/products')
+      }, 1200)
     } else {
-      alert(response.message || '发布失败，请稍后重试')
+      showToast(response.message || '发布失败，请稍后重试', 'error')
     }
   } catch (error) {
     console.error('发布失败:', error)
-    alert('网络错误，请检查网络连接后重试')
+    let msg = '网络错误，请检查网络连接后重试'
+    if (error.message) {
+      if (error.message.includes('401') || error.message.includes('过期')) {
+        msg = '登录已过期，请重新登录'
+        setTimeout(() => {
+          router.push({ path: '/login', query: { redirect: '/products/create' } })
+        }, 1500)
+      } else if (error.message.includes('参数错误') || error.message.includes('400')) {
+        msg = '提交数据格式有误，请检查填写内容'
+      } else if (error.message) {
+        msg = error.message
+      }
+    }
+    showToast(msg, 'error')
   } finally {
     submitting.value = false
   }
 }
+
+onMounted(() => {
+  loadCategories()
+})
 </script>
 
 <style scoped>
@@ -291,9 +490,6 @@ async function handleSubmit() {
   background-color: #f5f5f5;
 }
 
-/* ============================================
-   页面头部
-   ============================================ */
 .page-header {
   position: sticky;
   top: 0;
@@ -346,18 +542,21 @@ async function handleSubmit() {
   cursor: not-allowed;
 }
 
-/* ============================================
-   表单内容
-   ============================================ */
 .form-content {
   padding-bottom: 40px;
 }
 
-/* 图片上传 */
 .upload-section {
   background-color: #fff;
   padding: 20px 16px;
   margin-top: 10px;
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 14px;
 }
 
 .image-grid {
@@ -378,6 +577,39 @@ async function handleSubmit() {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.image-uploading {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.image-error-mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 77, 79, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
 }
 
 .remove-btn {
@@ -440,7 +672,6 @@ async function handleSubmit() {
   text-align: center;
 }
 
-/* 表单区域 */
 .form-section {
   margin-top: 10px;
   background-color: #fff;
@@ -524,7 +755,28 @@ async function handleSubmit() {
   color: #ccc;
 }
 
-/* 价格输入框 */
+.input-error {
+  border-color: #FF4D4F !important;
+  background-color: #FFF2F0 !important;
+}
+
+.input-error-border {
+  border-color: #FF4D4F !important;
+}
+
+.error-text {
+  font-size: 12px;
+  color: #FF4D4F;
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+.loading-hint {
+  font-size: 12px;
+  color: #999;
+  margin-top: 6px;
+}
+
 .price-input-wrapper {
   display: flex;
   align-items: center;
@@ -557,7 +809,6 @@ async function handleSubmit() {
   font-weight: 600;
 }
 
-/* 成色选项 */
 .condition-options {
   display: flex;
   flex-wrap: wrap;
@@ -586,7 +837,6 @@ async function handleSubmit() {
   transform: scale(0.95);
 }
 
-/* 发布须知 */
 .notice-section {
   margin-top: 10px;
   background-color: #fff;
@@ -623,5 +873,61 @@ async function handleSubmit() {
   height: 5px;
   border-radius: 50%;
   background-color: #FF6A00;
+}
+
+.toast-container {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  max-width: 80vw;
+}
+
+.toast-success {
+  background-color: #f6ffed;
+  color: #52c41a;
+  border: 1px solid #b7eb8f;
+}
+
+.toast-error {
+  background-color: #fff2f0;
+  color: #ff4d4f;
+  border: 1px solid #ffccc7;
+}
+
+.toast-info {
+  background-color: #e6f7ff;
+  color: #1890ff;
+  border: 1px solid #91d5ff;
+}
+
+.toast-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.toast-message {
+  white-space: nowrap;
+}
+
+.toast-fade-enter-active,
+.toast-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.toast-fade-enter-from,
+.toast-fade-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-20px);
 }
 </style>
