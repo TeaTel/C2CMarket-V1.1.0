@@ -14,6 +14,13 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/assets/**")
+                .addResourceLocations("classpath:/static/assets/")
+                .resourceChain(true);
+
+        registry.addResourceHandler("/vite.svg")
+                .addResourceLocations("classpath:/static/vite.svg");
+
         registry.addResourceHandler("/**")
                 .addResourceLocations("classpath:/static/")
                 .resourceChain(true)
@@ -27,13 +34,16 @@ public class WebConfig implements WebMvcConfigurer {
             if (resource.exists() && resource.isReadable()) {
                 return resource;
             }
+
             if (!resourcePath.startsWith("api/") &&
                 !resourcePath.startsWith("v2/") &&
                 !resourcePath.startsWith("v3/") &&
                 !resourcePath.contains(".") &&
-                !resourcePath.startsWith("ws")) {
+                !resourcePath.startsWith("ws") &&
+                !resourcePath.startsWith("error")) {
                 return new ClassPathResource("/static/index.html");
             }
+
             return null;
         }
     }
