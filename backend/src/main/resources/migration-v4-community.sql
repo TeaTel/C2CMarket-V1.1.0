@@ -77,10 +77,38 @@ CREATE TABLE IF NOT EXISTS user_follows (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户关注表';
 
 -- -----------------------------------------------------------
--- 5. 商品表扩展（商品故事功能 - 非破坏性 ALTER TABLE）
+-- 5. 商品表扩展（商品故事功能 - 幂等安全版本）
 -- -----------------------------------------------------------
-ALTER TABLE products ADD COLUMN IF NOT EXISTS story_title VARCHAR(200) DEFAULT NULL COMMENT '故事标题';
-ALTER TABLE products ADD COLUMN IF NOT EXISTS story_content TEXT DEFAULT NULL COMMENT '故事正文（富文本/长文本）';
-ALTER TABLE products ADD COLUMN IF NOT EXISTS story_images TEXT DEFAULT NULL COMMENT '故事配图URL（JSON数组，与商品主图独立）';
-ALTER TABLE products ADD COLUMN IF NOT EXISTS has_story TINYINT(1) DEFAULT 0 COMMENT '是否有故事内容（便于筛选）';
-ALTER TABLE products ADD COLUMN IF NOT EXISTS sale_mode VARCHAR(20) DEFAULT 'FIXED_PRICE' COMMENT '销售模式：FIXED_PRICE（一口价）/AUCTION（拍卖）';
+-- 重新创建辅助存储过程（以防 v3 已将其删除）
+DROP PROCEDURE IF EXISTS add_column_if_not_exists_v4;
+
+DELIMITER //
+CREATE PROCEDURE add_column_if_not_exists_v4(
+    IN tbl_name VARCHAR(128),
+    IN col_name VARCHAR(128),
+    IN col_def TEXT
+)
+BEGIN
+    DECLARE col_count INT DEFAULT 0;
+    SELECT COUNT(*) INTO col_count
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = tbl_name
+      AND COLUMN_NAME = col_name;
+
+    IF col_count = 0 THEN
+        SET @ddl = CONCAT('ALTER TABLE ', tbl_name, ' ADD COLUMN ', col_name, ' ', col_def);
+        PREPARE stmt FROM @ddl;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    END IF;
+END //
+DELIMITER ;
+
+CALL add_column_if_not_exists_v4('products', 'story_title', 'VARCHAR(200) DEFAULT NULL COMMENT ''故事标题''');
+CALL add_column_if_not_exists_v4('products', 'story_content', 'TEXT DEFAULT NULL COMMENT ''故事正文（富文本/长文本）''');
+CALL add_column_if_not_exists_v4('products', 'story_images', 'TEXT DEFAULT NULL COMMENT ''故事配图URL（JSON数组，与商品主图独立）''');
+CALL add_column_if_not_exists_v4('products', 'has_story', 'TINYINT(1) DEFAULT 0 COMMENT ''是否有故事内容（便于筛选）''');
+CALL add_column_if_not_exists_v4('products', 'sale_mode', 'VARCHAR(20) DEFAULT ''FIXED_PRICE'' COMMENT ''销售模式：FIXED_PRICE（一口价）/AUCTION（拍卖）''');
+
+DROP PROCEDURE IF EXISTS add_column_if_not_exists_v4;

@@ -20,7 +20,7 @@ spring:
       encoding: UTF-8
       mode: always
       continue-on-error: true
-      schema-locations: classpath:migration-v3.sql
+      schema-locations: classpath:migration-v3.sql,classpath:migration-v4-community.sql
       data-locations: classpath:data-mysql.sql
   
   # 关键修复：禁用延迟初始化确保所有Bean立即创建
@@ -32,11 +32,12 @@ spring:
   # JPA配置
   jpa:
     hibernate:
-      ddl-auto: validate  # 只验证表结构，不修改
+      ddl-auto: validate
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
-        format_sql: true
+        format_sql: false
         jdbc:
           batch_size: 20
         order_inserts: true

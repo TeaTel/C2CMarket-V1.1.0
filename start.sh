@@ -32,9 +32,8 @@ echo "Starting Spring Boot application..."
 
 exec java -Xmx512m -Xms256m \
     -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE:-prod} \
-    -Dlogging.level.com.campus.backend=DEBUG \
-    -Dlogging.level.org.springframework=INFO \
-    -Dlogging.level.org.springframework.jdbc=DEBUG \
-    -Dmanagement.endpoint.health.show-details=always \
-    -Dmanagement.endpoints.web.exposure.include=health,info,metrics \
+    -Dlogging.level.com.campus.backend=INFO \
+    -Dlogging.level.org.springframework=WARN \
+    -Dlogging.level.org.springframework.jdbc=WARN \
+    -Dlogging.level.org.hibernate=WARN \
     -jar /app/backend.jar
