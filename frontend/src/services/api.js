@@ -496,6 +496,46 @@ class WebSocketManager {
   }
 }
 
+// ==================== 社区帖子 API ====================
+export const postApi = {
+  getPosts(params) { return api.get('/v2/posts', { params }) },
+  getPostDetail(id) { return api.get(`/v2/posts/${id}`) },
+  createPost(data) { return api.post('/v2/posts', data) },
+  updatePost(id, data) { return api.put(`/v2/posts/${id}`, data) },
+  deletePost(id) { return api.delete(`/v2/posts/${id}`) },
+  getUserPosts(userId) { return api.get(`/v2/posts/user/${userId}`) },
+  addComment(postId, data) { return api.post(`/v2/posts/${postId}/comments`, data) },
+  getComments(postId, params) { return api.get(`/v2/posts/${postId}/comments`, { params }) },
+  deleteComment(commentId) { return api.delete(`/v2/posts/comments/${commentId}`) },
+  togglePin(id, isPinned) { return api.put(`/v2/posts/${id}/pin`, null, { params: { isPinned } }) },
+  toggleEssence(id, isEssence) { return api.put(`/v2/posts/${id}/essence`, null, { params: { isEssence } }) }
+}
+
+// ==================== 点赞 API ====================
+export const likeApi = {
+  toggleLike(targetType, targetId) { return api.post('/v2/likes/toggle', null, { params: { targetType, targetId } }) },
+  checkLiked(targetType, targetId) { return api.get('/v2/likes/check', { params: { targetType, targetId } }) },
+  getLikeCount(targetType, targetId) { return api.get('/v2/likes/count', { params: { targetType, targetId } }) }
+}
+
+// ==================== 关注 API ====================
+export const followApi = {
+  toggleFollow(followeeId) { return api.post('/v2/follows/toggle', null, { params: { followeeId } }) },
+  checkFollowing(followeeId) { return api.get('/v2/follows/check', { params: { followeeId } }) },
+  getFollowStats(userId) { return api.get('/v2/follows/stats', { params: { userId } }) }
+}
+
+// ==================== 信息流 API ====================
+export const feedApi = {
+  getFeed(params) { return api.get('/v2/feed', { params }) }
+}
+
+// ==================== 商品故事 API ====================
+export const storyApi = {
+  getStoryFeed(params) { return api.get('/v2/stories/feed', { params }) },
+  getUserStories(userId) { return api.get(`/v2/stories/user/${userId}`) }
+}
+
 // 创建全局WebSocket实例
 export const wsManager = new WebSocketManager()
 

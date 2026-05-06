@@ -27,10 +27,19 @@ public class SecurityUtils {
      * 优先从SecurityContext获取username再查库，或直接从JWT解析userId
      */
     public static Long getCurrentUserId() {
-        // 方式1: 从SecurityContext获取 (已认证请求)
+        Long userId = getCurrentUserIdOrNull();
+        if (userId == null) {
+            throw new AuthenticationException("无法获取当前用户信息，请先登录");
+        }
+        return userId;
+    }
+
+    /**
+     * 获取当前登录用户的ID，未登录时返回null（不抛异常）
+     */
+    public static Long getCurrentUserIdOrNull() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
-            // 直接从JWT Token解析userId (更高效)
             ServletRequestAttributes attrs =
                     (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             if (attrs != null) {
@@ -40,13 +49,12 @@ public class SecurityUtils {
                     try {
                         return jwtUtil.getUserIdFromToken(token);
                     } catch (Exception e) {
-                        // Token解析失败时回退到方式2
+                        // Token解析失败返回null
                     }
                 }
             }
         }
-
-        throw new AuthenticationException("无法获取当前用户信息，请先登录");
+        return null;
     }
 
     /**

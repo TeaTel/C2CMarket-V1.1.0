@@ -49,4 +49,16 @@ public class ProductCreateDTO {
 
     /** 交付方式: 1自提, 2快递, 3均可 */
     private Integer deliveryMethod;
+
+    /** 故事标题（商品故事功能） */
+    private String storyTitle;
+
+    /** 故事正文（商品故事功能） */
+    private String storyContent;
+
+    /** 故事配图URL列表 */
+    private List<String> storyImages;
+
+    /** 销售模式：FIXED_PRICE（一口价）/AUCTION（拍卖） */
+    private String saleMode;
 }

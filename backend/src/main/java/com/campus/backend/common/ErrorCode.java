@@ -36,6 +36,21 @@ public enum ErrorCode {
     // 消息相关错误码 (5000-5999)
     MESSAGE_NOT_FOUND(5001, "消息不存在"),
     
+    // 帖子相关错误码 (7000-7999)
+    POST_NOT_FOUND(7001, "帖子不存在"),
+    POST_OWNERSHIP_ERROR(7002, "无权操作此帖子"),
+    POST_ALREADY_LIKED(7003, "已经点赞过"),
+    POST_NOT_LIKED(7004, "尚未点赞"),
+    COMMENT_NOT_FOUND(7005, "评论不存在"),
+    
+    // 关注相关错误码 (8000-8999)
+    FOLLOW_SELF_ERROR(8001, "不能关注自己"),
+    ALREADY_FOLLOWED(8002, "已经关注过该用户"),
+    NOT_FOLLOWED(8003, "尚未关注该用户"),
+    
+    // 商品故事相关错误码 (2005-2010)
+    STORY_CONTENT_EMPTY(2005, "故事内容不能为空"),
+    
     // 验证错误码 (6000-6999)
     VALIDATION_ERROR(6001, "数据验证失败"),
     

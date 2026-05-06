@@ -36,6 +36,10 @@
             <if test="query.maxPrice != null">
                 AND price &lt;= #{query.maxPrice}
             </if>
+            <!-- 故事筛选 -->
+            <if test="query.hasStory != null">
+                AND has_story = #{query.hasStory}
+            </if>
         </where>
         <!-- 排序 -->
         <choose>
@@ -73,6 +77,9 @@
             <if test="query.maxPrice != null">
                 AND price &lt;= #{query.maxPrice}
             </if>
+            <if test="query.hasStory != null">
+                AND has_story = #{query.hasStory}
+            </if>
         </where>
     </select>
 
@@ -90,6 +97,11 @@
             <if test="coverImage != null">cover_image = #{coverImage},</if>
             <if test="location != null">location = #{location},</if>
             <if test="deliveryMethod != null">delivery_method = #{deliveryMethod},</if>
+            <if test="storyTitle != null">story_title = #{storyTitle},</if>
+            <if test="storyContent != null">story_content = #{storyContent},</if>
+            <if test="storyImages != null">story_images = #{storyImages},</if>
+            <if test="hasStory != null">has_story = #{hasStory},</if>
+            <if test="saleMode != null">sale_mode = #{saleMode},</if>
             updated_at = CURRENT_TIMESTAMP
         </set>
         WHERE id = #{id}

@@ -80,6 +80,24 @@ public class ProductServiceImpl implements ProductService {
             product.setCoverImage(dto.getImageUrls().get(0));
         }
 
+        // 处理商品故事
+        if (dto.getStoryTitle() != null || dto.getStoryContent() != null) {
+            product.setStoryTitle(dto.getStoryTitle());
+            product.setStoryContent(dto.getStoryContent());
+            product.setHasStory(dto.getStoryContent() != null && !dto.getStoryContent().isBlank());
+        }
+        if (dto.getStoryImages() != null && !dto.getStoryImages().isEmpty()) {
+            try {
+                product.setStoryImages(objectMapper.writeValueAsString(dto.getStoryImages()));
+            } catch (JsonProcessingException e) {
+                log.warn("故事配图URL序列化失败", e);
+            }
+        }
+        // 销售模式
+        if (dto.getSaleMode() != null) {
+            product.setSaleMode(dto.getSaleMode());
+        }
+
         productMapper.insert(product);
         log.info("商品发布成功: id={}, name={}, sellerId={}", product.getId(), product.getName(), sellerId);
         return convertToVO(product);
@@ -103,6 +121,19 @@ public class ProductServiceImpl implements ProductService {
             } catch (JsonProcessingException e) {
                 log.warn("图片URL序列化失败", e);
             }
+        }
+
+        // 处理故事图片
+        if (dto.getStoryImages() != null) {
+            try {
+                product.setStoryImages(objectMapper.writeValueAsString(dto.getStoryImages()));
+            } catch (JsonProcessingException e) {
+                log.warn("故事配图URL序列化失败", e);
+            }
+        }
+        // 更新has_story标记
+        if (dto.getStoryContent() != null) {
+            product.setHasStory(!dto.getStoryContent().isBlank());
         }
 
         productMapper.update(product);
@@ -168,6 +199,16 @@ public class ProductServiceImpl implements ProductService {
                 }
             }
         } catch (Exception ignored) {}
+
+        // 故事配图JSON -> List
+        if (product.getStoryImages() != null && !product.getStoryImages().isBlank()) {
+            try {
+                vo.setStoryImages(objectMapper.readValue(product.getStoryImages(),
+                        new TypeReference<List<String>>() {}));
+            } catch (JsonProcessingException e) {
+                log.warn("故事配图URL反序列化失败", e);
+            }
+        }
 
         return vo;
     }

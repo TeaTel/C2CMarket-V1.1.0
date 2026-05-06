@@ -29,6 +29,9 @@ public class ProductQueryDTO {
     /** 价格区间-最高价 */
     private java.math.BigDecimal maxPrice;
 
+    /** 是否有故事内容 */
+    private Boolean hasStory;
+
     /** 排序方式: price_asc, price_desc, time_desc(默认), view_count */
     private String sortBy = "time_desc";
 

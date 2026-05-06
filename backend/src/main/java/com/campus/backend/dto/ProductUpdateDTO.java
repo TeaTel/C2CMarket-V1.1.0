@@ -42,4 +42,16 @@ public class ProductUpdateDTO {
 
     /** 交付方式 */
     private Integer deliveryMethod;
+
+    /** 故事标题 */
+    private String storyTitle;
+
+    /** 故事正文 */
+    private String storyContent;
+
+    /** 故事配图URL列表 */
+    private List<String> storyImages;
+
+    /** 销售模式 */
+    private String saleMode;
 }

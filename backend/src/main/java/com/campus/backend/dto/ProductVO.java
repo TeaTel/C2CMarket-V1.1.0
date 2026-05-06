@@ -37,6 +37,15 @@ public class ProductVO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /** 商品故事相关 */
+    private String storyTitle;
+    private String storyContent;
+    private List<String> storyImages;
+    private Boolean hasStory;
+
+    /** 销售模式 */
+    private String saleMode;
+
     /** 获取成色文本 */
     public String getConditionText() {
         if (conditionLevel == null) return "未设置";

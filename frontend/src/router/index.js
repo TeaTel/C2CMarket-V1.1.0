@@ -78,6 +78,43 @@ const routes = [
       title: '聊天'
     }
   },
+  // ==================== 社区功能路由 (Phase 1) ====================
+  {
+    path: '/community',
+    name: 'Community',
+    component: () => import('../views/CommunityPage.vue'),
+    meta: { title: '社区', showTabBar: true }
+  },
+  {
+    path: '/community/posts/create',
+    name: 'PostCreate',
+    component: () => import('../views/PostCreatePage.vue'),
+    meta: { requiresAuth: true, title: '发布帖子' }
+  },
+  {
+    path: '/community/posts/:id',
+    name: 'PostDetail',
+    component: () => import('../views/PostDetailPage.vue'),
+    meta: { title: '帖子详情' }
+  },
+  {
+    path: '/boards',
+    name: 'BoardsDiscover',
+    component: () => import('../views/BoardsDiscoverPage.vue'),
+    meta: { title: '兴趣圈子', showTabBar: true }
+  },
+  {
+    path: '/boards/:id',
+    name: 'BoardDetail',
+    component: () => import('../views/BoardPage.vue'),
+    meta: { title: '圈子详情' }
+  },
+  {
+    path: '/users/:id',
+    name: 'UserProfile',
+    component: () => import('../views/UserProfilePage.vue'),
+    meta: { title: '用户主页' }
+  },
   {
     path: '/profile',
     name: 'Profile',
@@ -154,7 +191,8 @@ const router = createRouter({
 })
 
 // 白名单路径（无需登录即可访问）
-const publicPaths = ['/', '/login', '/register', '/forgot-password', '/db-test', '/products', '/products/:id', '/categories']
+const publicPaths = ['/', '/login', '/register', '/forgot-password', '/db-test', '/products', '/products/:id', '/categories',
+  '/community', '/community/posts/:id', '/boards', '/boards/:id', '/users/:id']
 
 // 全局前置守卫
 router.beforeEach((to, from, next) => {

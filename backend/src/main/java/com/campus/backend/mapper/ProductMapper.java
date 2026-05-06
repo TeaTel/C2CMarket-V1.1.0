@@ -32,9 +32,11 @@ public interface ProductMapper {
      * 新增商品
      */
     @Insert("INSERT INTO products (name, description, price, original_price, category_id, seller_id, " +
-            "condition_level, image_urls, cover_image, location, delivery_method, status) " +
+            "condition_level, image_urls, cover_image, location, delivery_method, status, " +
+            "story_title, story_content, story_images, has_story, sale_mode) " +
             "VALUES (#{name}, #{description}, #{price}, #{originalPrice}, #{categoryId}, #{sellerId}, " +
-            "#{conditionLevel}, #{imageUrls}, #{coverImage}, #{location}, #{deliveryMethod}, 1)")
+            "#{conditionLevel}, #{imageUrls}, #{coverImage}, #{location}, #{deliveryMethod}, 1, " +
+            "#{storyTitle}, #{storyContent}, #{storyImages}, #{hasStory}, #{saleMode})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(Product product);
 

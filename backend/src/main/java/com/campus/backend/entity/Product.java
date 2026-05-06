@@ -64,6 +64,27 @@ public class Product {
     /** 交付方式: 1自提, 2快递, 3均可 */
     private Integer deliveryMethod;
 
+    /** 故事标题（商品故事功能） */
+    private String storyTitle;
+
+    /** 故事正文（富文本/长文本，商品故事功能） */
+    private String storyContent;
+
+    /** 故事配图URL列表（JSON数组，与商品主图独立） */
+    private String storyImages;
+
+    /** 是否有故事内容（便于筛选） */
+    private Boolean hasStory;
+
+    /** 销售模式：FIXED_PRICE（一口价）/ AUCTION（拍卖） */
+    private String saleMode;
+
+    /** 关联交易组织ID（组织化交易功能） */
+    private Long orgId;
+
+    /** 可见性：PUBLIC / ORG_ONLY */
+    private String visibility;
+
     /** 发布时间 */
     private LocalDateTime createdAt;
 

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.campus.backend.mapper.PostMapper">
+
+    <sql id="whereClause">
+        <where>
+            <if test="query.keyword != null and query.keyword != ''">
+                AND (title LIKE CONCAT('%', #{query.keyword}, '%')
+                OR content LIKE CONCAT('%', #{query.keyword}, '%'))
+            </if>
+            <if test="query.boardId != null">
+                AND board_id = #{query.boardId}
+            </if>
+            <if test="query.postType != null and query.postType != ''">
+                AND post_type = #{query.postType}
+            </if>
+            <if test="query.userId != null">
+                AND user_id = #{query.userId}
+            </if>
+            <if test="query.status != null and query.status != ''">
+                AND status = #{query.status}
+            </if>
+            <if test="query.status == null or query.status == ''">
+                AND status = 'PUBLISHED'
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectPostList" resultType="com.campus.backend.entity.Post">
+        SELECT * FROM posts
+        <include refid="whereClause"/>
+        <choose>
+            <when test="query.sortBy == 'hot'">
+                ORDER BY (like_count * 2 + comment_count * 3 + view_count) DESC, created_at DESC
+            </when>
+            <when test="query.sortBy == 'likes'">
+                ORDER BY like_count DESC, created_at DESC
+            </when>
+            <otherwise>
+                ORDER BY is_pinned DESC, created_at DESC
+            </otherwise>
+        </choose>
+        LIMIT #{query.offset}, #{query.size}
+    </select>
+
+    <select id="selectPostCount" resultType="int">
+        SELECT COUNT(*) FROM posts
+        <include refid="whereClause"/>
+    </select>
+</mapper>
