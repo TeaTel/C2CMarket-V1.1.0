@@ -1,51 +1,88 @@
 <template>
-  <div class="post-detail-page">
-    <div class="header">
-      <button class="back-btn" @click="$router.back()">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-      </button>
-      <span class="header-title">帖子详情</span>
-      <button class="share-btn">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>
-      </button>
+  <div class="detail-page">
+    <header class="detail-nav">
+      <div class="nav-left">
+        <button class="nav-back" @click="$router.back()">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="15,18 9,12 15,6"/>
+          </svg>
+        </button>
+        <img :src="post?.userAvatar || defaultAvatar" class="nav-avatar" @error="onAvatarError" />
+        <span class="nav-username">{{ post?.userName || '匿名用户' }}</span>
+      </div>
+      <div class="nav-right">
+        <button v-if="auth.isAuthenticated && auth.currentUser?.id !== post?.userId" class="follow-btn" :class="{ followed: isFollowing }" @click="toggleFollow">
+          <svg v-if="!isFollowing" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+          {{ isFollowing ? '已关注' : '关注' }}
+        </button>
+        <button class="share-btn" @click="handleShare">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div v-if="loading" class="loading-state">
+      <div class="skeleton-image"></div>
+      <div class="skeleton-block">
+        <div class="skeleton-line w-80"></div>
+        <div class="skeleton-line w-60"></div>
+        <div class="skeleton-line w-40"></div>
+      </div>
     </div>
 
-    <div v-if="loading" class="loading">
-      <div class="skeleton" style="height:200px;margin-bottom:16px;border-radius:12px;"></div>
-    </div>
-
-    <div v-else-if="error" class="error">
+    <div v-else-if="error" class="error-state">
+      <span class="error-icon">😕</span>
       <p>{{ error }}</p>
       <button @click="loadPost">重试</button>
     </div>
 
-    <div v-else-if="post" class="post-content-area">
-      <div class="author-section">
-        <img :src="post.userAvatar || defaultAvatar" class="author-avatar" @error="onAvatarError" />
-        <div class="author-info">
-          <span class="author-name" @click="goToUser(post.userId)">{{ post.userName || '匿名用户' }}</span>
-          <span class="post-meta">{{ formatTime(post.createdAt) }} · {{ post.viewCount || 0 }} 阅读</span>
+    <main v-else-if="post" class="detail-content">
+      <section v-if="postImages.length > 0" class="image-gallery">
+        <div class="gallery-grid" :class="{ single: postImages.length === 1, multi: postImages.length > 1 }">
+          <div v-for="(img, idx) in postImages" :key="idx" class="gallery-item" @click="previewImage(img)">
+            <img :src="img" loading="lazy" class="gallery-img" @error="onImageError" />
+          </div>
         </div>
-        <button v-if="auth.isAuthenticated && auth.currentUser?.id !== post.userId" class="follow-btn" :class="{ following: isFollowing }" @click="toggleFollow">
-          {{ isFollowing ? '已关注' : '+ 关注' }}
+      </section>
+
+      <section class="text-section">
+        <h1 class="detail-title">{{ post.title }}</h1>
+        <p class="detail-body" v-html="renderedContent"></p>
+      </section>
+
+      <section class="comment-section-wrapper">
+        <CommentSection :post-id="post.id" :initial-comments="[]" />
+      </section>
+    </main>
+
+    <footer v-if="post" class="bottom-bar">
+      <div class="bottom-comment-input" @click="focusComment">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#999" stroke-width="2">
+          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+        </svg>
+        <span>添加评论...</span>
+      </div>
+      <div class="bottom-actions">
+        <LikeButton :is-liked="post.isLiked" :count="post.likeCount" target-type="POST" :target-id="post.id" @toggled="onLikeToggled" />
+        <button class="action-btn" :class="{ active: isFavorited }" @click="toggleFavorite">
+          <svg v-if="!isFavorited" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+          </svg>
+          <svg v-else viewBox="0 0 24 24" width="20" height="20" fill="#FF6A00" stroke="#FF6A00" stroke-width="2">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+          </svg>
+        </button>
+        <button class="action-btn" @click="focusComment">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+          </svg>
+          <span class="action-count">{{ post.commentCount || 0 }}</span>
         </button>
       </div>
-
-      <h1 class="post-title">{{ post.title }}</h1>
-      <div class="post-body" v-html="renderedContent"></div>
-
-      <div class="post-actions-bar">
-        <LikeButton :is-liked="post.isLiked" :count="post.likeCount" target-type="POST" :target-id="post.id" @toggled="onLikeToggled" />
-        <div class="action-item">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-          <span>评论</span>
-        </div>
-      </div>
-
-      <div class="divider"></div>
-
-      <CommentSection :post-id="post.id" :initial-comments="[]" />
-    </div>
+    </footer>
   </div>
 </template>
 
@@ -65,8 +102,16 @@ const post = ref(null)
 const loading = ref(true)
 const error = ref(null)
 const isFollowing = ref(false)
+const isFavorited = ref(false)
 
 const defaultAvatar = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#eee"/><circle cx="20" cy="15" r="8" fill="#ccc"/><ellipse cx="20" cy="35" rx="12" ry="8" fill="#ccc"/></svg>')
+
+const postImages = computed(() => {
+  if (!post.value) return []
+  if (post.value.images?.length) return post.value.images
+  if (post.value.coverImage) return [post.value.coverImage]
+  return []
+})
 
 const renderedContent = computed(() => {
   if (!post.value?.content) return ''
@@ -79,13 +124,10 @@ async function loadPost() {
   loading.value = true
   error.value = null
   try {
-    const id = route.params.id
-    const res = await postApi.getPostDetail(id)
+    const res = await postApi.getPostDetail(route.params.id)
     if (res.code === 200) {
       post.value = res.data
-      if (post.value.userId && auth.isAuthenticated) {
-        checkFollowStatus(post.value.userId)
-      }
+      if (post.value.userId && auth.isAuthenticated) checkFollowStatus(post.value.userId)
     } else {
       error.value = res.message || '加载失败'
     }
@@ -112,133 +154,268 @@ async function toggleFollow() {
 }
 
 function onLikeToggled(isLiked, count) {
-  if (post.value) {
-    post.value.isLiked = isLiked
-    post.value.likeCount = count
-  }
+  if (post.value) { post.value.isLiked = isLiked; post.value.likeCount = count }
 }
 
-function goToUser(userId) { router.push(`/users/${userId}`) }
+function toggleFavorite() { isFavorited.value = !isFavorited.value }
+function focusComment() { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }) }
+function handleShare() { navigator.clipboard?.writeText(window.location.href) }
+function previewImage(url) { window.open(url, '_blank') }
 function onAvatarError(e) { e.target.src = defaultAvatar }
-
-function formatTime(dateStr) {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diff = now - date
-  if (diff < 60000) return '刚刚'
-  if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前'
-  if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前'
-  if (diff < 604800000) return Math.floor(diff / 86400000) + '天前'
-  return date.toLocaleDateString()
-}
+function onImageError(e) { e.target.style.display = 'none' }
 </script>
 
 <style scoped>
-.post-detail-page {
+.detail-page {
   min-height: 100vh;
-  background: #f5f5f5;
-  padding-bottom: 80px;
+  background-color: #F5F7FA;
+  padding-bottom: 66px;
 }
-.header {
+
+.detail-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
   display: flex;
   align-items: center;
-  padding: 12px 16px;
-  background: #fff;
-  border-bottom: 1px solid #f0f0f0;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 16px;
+  background: #FFFFFF;
+  border-bottom: 1px solid #E8ECF0;
 }
-.back-btn, .share-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  color: #333;
-}
-.header-title {
-  flex: 1;
-  text-align: center;
-  font-size: 16px;
-  font-weight: 600;
-}
-.post-content-area {
-  padding: 16px;
-  max-width: 750px;
-  margin: 0 auto;
-}
-.author-section {
+
+.nav-left {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: #fff;
-  border-radius: 12px;
-  padding: 12px;
-  margin-bottom: 16px;
+  min-width: 0;
+  flex: 1;
 }
-.author-avatar {
-  width: 44px;
-  height: 44px;
+
+.nav-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  color: #333333;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.nav-avatar {
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   object-fit: cover;
   background: #eee;
+  flex-shrink: 0;
 }
-.author-info { flex: 1; }
-.author-name { font-size: 15px; font-weight: 600; color: #333; cursor: pointer; }
-.post-meta { font-size: 12px; color: #999; display: block; }
-.follow-btn {
-  padding: 6px 16px;
-  border-radius: 16px;
-  border: 1px solid #ff6a00;
-  background: #fff;
-  color: #ff6a00;
-  font-size: 13px;
-  cursor: pointer;
+
+.nav-username {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.follow-btn.following { background: #f0f0f0; border-color: #ccc; color: #999; }
-.post-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #222;
-  margin-bottom: 12px;
-  line-height: 1.4;
-}
-.post-body {
-  background: #fff;
-  border-radius: 12px;
-  padding: 16px;
-  font-size: 15px;
-  line-height: 1.8;
-  color: #444;
-  margin-bottom: 16px;
-}
-.post-actions-bar {
+
+.nav-right {
   display: flex;
-  gap: 24px;
   align-items: center;
-  background: #fff;
-  border-radius: 12px;
-  padding: 12px 16px;
-  margin-bottom: 16px;
+  gap: 8px;
+  flex-shrink: 0;
 }
-.action-item {
+
+.follow-btn {
   display: flex;
   align-items: center;
   gap: 4px;
+  padding: 6px 14px;
+  border-radius: 4px;
+  border: 1px solid #DDE1E6;
+  background: #F0F2F5;
+  color: #666666;
   font-size: 13px;
-  color: #999;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
-.divider { height: 1px; background: #f0f0f0; margin: 8px 0 16px; }
-.loading, .error { padding: 60px 20px; text-align: center; }
-.error p { color: #999; margin-bottom: 12px; }
-.error button {
-  padding: 8px 24px; border: none; background: #ff6a00;
-  color: #fff; border-radius: 20px; cursor: pointer;
+
+.follow-btn.followed {
+  background: #E8F4FD;
+  border-color: #B3D8F5;
+  color: #1890FF;
 }
-.skeleton { background: #f0f0f0; animation: shimmer 1.5s infinite; }
-@keyframes shimmer {
-  0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; }
+
+.share-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  color: #666666;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.share-btn:active { background: #F0F2F5; }
+
+.loading-state { padding-top: 56px; }
+.skeleton-image {
+  width: 100%;
+  aspect-ratio: 1/1;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+.skeleton-block { padding: 16px; background: #fff; }
+.skeleton-line {
+  height: 18px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  margin-bottom: 12px;
+}
+.w-80 { width: 80%; } .w-60 { width: 60%; } .w-40 { width: 40%; }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+.error-state {
+  padding: 120px 32px;
+  text-align: center;
+  color: #999999;
+}
+.error-icon { font-size: 64px; margin-bottom: 16px; display: block; }
+.error-state button {
+  padding: 10px 32px; border: none; background: #FF6A00;
+  color: #fff; border-radius: 4px; font-size: 14px; cursor: pointer; margin-top: 16px;
+}
+
+.detail-content {
+  padding-top: 56px;
+}
+
+.image-gallery {
+  background: #FFFFFF;
+  padding: 0;
+}
+
+.gallery-grid {
+  display: grid;
+  gap: 2px;
+}
+
+.gallery-grid.single { grid-template-columns: 1fr; }
+.gallery-grid.multi { grid-template-columns: repeat(2, 1fr); }
+
+.gallery-item {
+  overflow: hidden;
+  background: #F5F7FA;
+  cursor: pointer;
+}
+
+.gallery-img {
+  width: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gallery-grid.single .gallery-item { aspect-ratio: 1/1; }
+.gallery-grid.single .gallery-img { height: 100%; }
+.gallery-grid.multi .gallery-item { aspect-ratio: 1/1; }
+.gallery-grid.multi .gallery-img { height: 100%; }
+
+.text-section {
+  background: #FFFFFF;
+  padding: 16px;
+  margin-top: 0;
+}
+
+.detail-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333333;
+  line-height: 1.4;
+  margin: 0 0 12px;
+}
+
+.detail-body {
+  font-size: 16px;
+  font-weight: 400;
+  color: #333333;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.comment-section-wrapper {
+  margin-top: 16px;
+}
+
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  height: 50px;
+  padding: 0 16px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: #FFFFFF;
+  border-top: 1px solid #E8ECF0;
+}
+
+.bottom-comment-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  width: 60%;
+  padding: 8px 12px;
+  background: #F5F7FA;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #999999;
+  margin-right: 12px;
+}
+
+.bottom-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 10px;
+  border: none;
+  background: none;
+  color: #666666;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.action-btn:active { background: #F0F2F5; }
+
+.action-count {
+  font-size: 13px;
+  color: #666666;
 }
 </style>
