@@ -1,31 +1,5 @@
 <template>
   <div class="home-page">
-    <nav class="main-nav-bar">
-      <div class="nav-tabs">
-        <button
-          v-for="tab in mainTabs"
-          :key="tab.key"
-          class="nav-tab"
-          :class="{ active: activeTab === tab.key }"
-          @click="switchMainTab(tab.key)"
-        >
-          {{ tab.label }}
-        </button>
-      </div>
-      <div class="search-box">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-          <circle cx="11" cy="11" r="8"/>
-          <path d="M21 21l-4.35-4.35"/>
-        </svg>
-        <input
-          type="text"
-          v-model="searchKeyword"
-          class="search-input"
-          placeholder="搜索..."
-          @keyup.enter="handleSearch"
-        />
-      </div>
-    </nav>
 
     <nav class="circle-sub-nav" v-if="circles.length > 0">
       <button
@@ -124,23 +98,17 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
 import { feedApi, categoryApi } from '../services/api'
 import PostCard from '../components/PostCard.vue'
 
+const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
-const mainTabs = [
-  { key: 'discover', label: '发现' },
-  { key: 'following', label: '关注' },
-  { key: 'campus', label: '校区' }
-]
-
-const activeTab = ref('discover')
+const activeTab = ref(route.query.tab || 'discover')
 const activeCircle = ref(null)
-const searchKeyword = ref('')
 
 const feedItems = ref([])
 const loading = ref(true)
@@ -262,17 +230,18 @@ function loadMoreItems() {
   loadFeed(true)
 }
 
-function switchMainTab(tab) {
-  if (activeTab.value === tab) return
-  activeTab.value = tab
-  activeCircle.value = null
-  currentPage.value = 1
-  hasMore.value = true
-  feedItems.value = []
-  error.value = null
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-  loadFeed()
-}
+watch(() => route.query.tab, (newTab) => {
+  if (newTab && newTab !== activeTab.value) {
+    activeTab.value = newTab
+    activeCircle.value = null
+    currentPage.value = 1
+    hasMore.value = true
+    feedItems.value = []
+    error.value = null
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    loadFeed()
+  }
+})
 
 function switchCircle(circleId) {
   if (activeCircle.value === circleId) return
@@ -283,11 +252,6 @@ function switchCircle(circleId) {
   error.value = null
   window.scrollTo({ top: 0, behavior: 'smooth' })
   loadFeed()
-}
-
-function handleSearch() {
-  if (!searchKeyword.value.trim()) return
-  router.push({ path: '/products', query: { keyword: searchKeyword.value.trim() } })
 }
 
 function goToPost(postId) {
@@ -315,93 +279,6 @@ function formatPrice(price) {
 .home-page {
   min-height: 100vh;
   background-color: #f5f5f5;
-}
-
-.main-nav-bar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: sticky;
-  top: 48px;
-  z-index: 99;
-  background: #fff;
-  padding: 0 12px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.nav-tabs {
-  display: flex;
-  max-width: 320px;
-  width: 100%;
-}
-
-.nav-tab {
-  flex: 1;
-  padding: 12px 0;
-  text-align: center;
-  font-size: 15px;
-  font-weight: 500;
-  color: #666;
-  cursor: pointer;
-  border: none;
-  background: none;
-  position: relative;
-  transition: color 0.25s ease;
-}
-
-.nav-tab.active {
-  color: #FF6A00;
-  font-weight: 700;
-}
-
-.nav-tab.active::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 28px;
-  height: 3px;
-  background: #FF6A00;
-  border-radius: 2px;
-}
-
-.search-box {
-  position: absolute;
-  right: 12px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: #f5f5f5;
-  border-radius: 16px;
-  padding: 6px 12px;
-  transition: width 0.3s ease, box-shadow 0.2s ease;
-}
-
-.search-box:focus-within {
-  width: 160px;
-  background: #fff;
-  box-shadow: 0 0 0 2px rgba(255, 106, 0, 0.3);
-}
-
-.search-icon {
-  color: #999;
-  flex-shrink: 0;
-}
-
-.search-input {
-  flex: 1;
-  border: none;
-  background: none;
-  font-size: 13px;
-  color: #333;
-  outline: none;
-  width: 0;
-  min-width: 0;
-}
-
-.search-input::placeholder {
-  color: #bbb;
 }
 
 .circle-sub-nav {

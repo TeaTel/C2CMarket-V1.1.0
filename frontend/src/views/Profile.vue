@@ -1,6 +1,6 @@
 <template>
   <div class="profile-page">
-    <header class="profile-header">
+    <header class="profile-header" v-if="isAuthenticated">
       <div class="header-bg"></div>
       <div class="user-info-card">
         <div class="avatar-section" @click="handleAvatarClick">
@@ -34,7 +34,19 @@
       </div>
     </header>
 
-    <main class="menu-list">
+    <section v-if="!isAuthenticated" class="auth-welcome">
+      <div class="auth-card">
+        <div class="auth-logo">🎓</div>
+        <h2 class="auth-title">校园集市</h2>
+        <p class="auth-desc">登录你的账号，开启校园闲置交易之旅</p>
+        <div class="auth-actions">
+          <button @click="goToLogin" class="auth-btn login-btn">登录</button>
+          <button @click="goToRegister" class="auth-btn register-btn">注册</button>
+        </div>
+      </div>
+    </section>
+
+    <main class="menu-list" v-if="isAuthenticated">
       <section class="menu-group">
         <router-link to="/products/create" class="menu-item highlight">
           <span class="menu-icon publish-icon">+</span>
@@ -167,6 +179,8 @@ import { productApi, favoriteApi } from '../services/api'
 const router = useRouter()
 const authStore = useAuthStore()
 
+const isAuthenticated = computed(() => authStore.isAuthenticated.value)
+
 const defaultAvatar = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0UwRTBFRCIvPjxjaXJjbGUgY3g9IjIwIiBjeT0iMTciIHI9IjgiIGZpbGw9IndoaXRlIi8+PC9zdmc+`
 
 const userInfo = computed(() => {
@@ -248,6 +262,14 @@ function confirmLogout() {
 
 function cancelLogout() {
   showLogoutConfirm.value = false
+}
+
+function goToLogin() {
+  router.push({ path: '/login', query: { redirect: '/profile' } })
+}
+
+function goToRegister() {
+  router.push('/register')
 }
 </script>
 
@@ -466,6 +488,79 @@ function cancelLogout() {
   font-size: 12px;
   color: #ccc;
   margin-top: 24px;
+}
+
+.auth-welcome {
+  display: flex;
+  justify-content: center;
+  padding: 80px 20px 40px;
+}
+
+.auth-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 48px 32px;
+  text-align: center;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+.auth-logo {
+  font-size: 56px;
+  margin-bottom: 16px;
+}
+
+.auth-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.auth-desc {
+  font-size: 14px;
+  color: #999;
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
+.auth-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.25s ease;
+}
+
+.auth-btn.login-btn {
+  background: linear-gradient(135deg, #FF6A00 0%, #FF8533 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(255, 106, 0, 0.25);
+}
+
+.auth-btn.login-btn:active {
+  transform: scale(0.97);
+}
+
+.auth-btn.register-btn {
+  background: #fff;
+  color: #FF6A00;
+  border: 1.5px solid #FF6A00;
+}
+
+.auth-btn.register-btn:active {
+  background: #FFF7E6;
+  transform: scale(0.97);
 }
 
 .logout-modal-overlay {

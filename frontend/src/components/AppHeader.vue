@@ -1,57 +1,70 @@
 <template>
   <header class="app-header">
     <div class="header-container">
-      <!-- 左侧：Logo和品牌名 -->
-      <div class="brand-section">
-        <router-link to="/" class="brand-link">
-          <span class="brand-icon">🎓</span>
-          <span class="brand-name">校园集市</span>
-          <span class="brand-sub">· 社区</span>
-        </router-link>
+      <div class="nav-tabs">
+        <button
+          v-for="tab in headerTabs"
+          :key="tab.key"
+          class="nav-tab"
+          :class="{ active: activeTab === tab.key }"
+          @click="switchTab(tab.key)"
+        >
+          {{ tab.label }}
+        </button>
       </div>
-
-      <!-- 中间：快捷导航 -->
-      <div class="quick-nav">
-        <router-link to="/community" class="nav-link">社区</router-link>
-        <router-link to="/boards" class="nav-link">圈子</router-link>
-      </div>
-
-      <!-- 右侧：用户操作区 -->
-      <div class="user-actions">
-        <!-- 未登录状态：显示登录和注册按钮 -->
-        <template v-if="!isAuthenticated">
-          <router-link to="/login" class="auth-btn login-btn">登录</router-link>
-          <router-link to="/register" class="auth-btn register-btn">注册</router-link>
-        </template>
-
-        <!-- 已登录状态：显示用户信息 -->
-        <template v-else>
-          <router-link to="/profile" class="user-info">
-            <img
-              :src="currentUser?.avatar || defaultAvatar"
-              :alt="currentUser?.nickname || '用户'"
-              class="user-avatar"
-            />
-            <span class="user-nickname">{{ currentUser?.nickname || currentUser?.username || '用户' }}</span>
-          </router-link>
-        </template>
+      <div class="search-box">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="M21 21l-4.35-4.35"/>
+        </svg>
+        <input
+          type="text"
+          v-model="searchKeyword"
+          class="search-input"
+          placeholder="搜索..."
+          @keyup.enter="handleSearch"
+        />
       </div>
     </div>
   </header>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useAuthStore } from '../store/auth'
+import { ref, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
-const authStore = useAuthStore()
+const route = useRoute()
+const router = useRouter()
 
-// 计算属性
-const isAuthenticated = computed(() => authStore.isAuthenticated.value)
-const currentUser = computed(() => authStore.currentUser.value)
+const headerTabs = [
+  { key: 'following', label: '关注' },
+  { key: 'discover', label: '发现' },
+  { key: 'campus', label: '校区' }
+]
 
-// 默认头像（SVG base64）
-const defaultAvatar = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0UwRTBFRCIvPjxjaXJjbGUgY3g9IjIwIiBjeT0iMTciIHI9IjgiIGZpbGw9IndoaXRlIi8+PC9zdmc+`
+const searchKeyword = ref('')
+
+const activeTab = computed(() => {
+  if (route.path === '/') {
+    return route.query.tab || 'discover'
+  }
+  return 'discover'
+})
+
+function switchTab(key) {
+  if (route.path === '/') {
+    router.push({ path: '/', query: { tab: key } })
+  } else {
+    router.push({ path: '/', query: { tab: key } })
+  }
+}
+
+function handleSearch() {
+  const kw = searchKeyword.value.trim()
+  if (!kw) return
+  searchKeyword.value = ''
+  router.push({ path: '/products', query: { keyword: kw } })
+}
 </script>
 
 <style scoped>
@@ -68,166 +81,93 @@ const defaultAvatar = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0
 .header-container {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
+  justify-content: center;
+  padding: 0 12px;
   max-width: 750px;
   margin: 0 auto;
   height: 48px;
+  position: relative;
 }
 
-/* 品牌区域 */
-.brand-section {
+.nav-tabs {
+  display: flex;
+  max-width: 320px;
+  width: 100%;
+}
+
+.nav-tab {
+  flex: 1;
+  padding: 12px 0;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  border: none;
+  background: none;
+  position: relative;
+  transition: color 0.25s ease;
+}
+
+.nav-tab.active {
+  color: #FF6A00;
+  font-weight: 700;
+}
+
+.nav-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 28px;
+  height: 3px;
+  background: #FF6A00;
+  border-radius: 2px;
+}
+
+.search-box {
+  position: absolute;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f5f5f5;
+  border-radius: 16px;
+  padding: 6px 12px;
+  transition: width 0.3s ease, box-shadow 0.2s ease;
+}
+
+.search-box:focus-within {
+  width: 160px;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(255, 106, 0, 0.3);
+}
+
+.search-icon {
+  color: #999;
   flex-shrink: 0;
 }
 
-.brand-link {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  text-decoration: none;
-  color: #333;
-}
-
-.brand-icon {
-  font-size: 24px;
-  line-height: 1;
-}
-
-.brand-name {
-  font-size: 18px;
-  font-weight: 700;
-  color: #FF6A00;
-  letter-spacing: 1px;
-}
-
-.brand-sub {
-  font-size: 13px;
-  font-weight: 400;
-  color: #999;
-  margin-left: 2px;
-}
-
-/* 快捷导航 */
-.quick-nav {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-}
-
-.nav-link {
-  font-size: 13px;
-  font-weight: 500;
-  color: #666;
-  text-decoration: none;
-  padding: 4px 10px;
-  border-radius: 12px;
-  transition: all 0.2s ease;
-}
-
-.nav-link:hover,
-.nav-link.router-link-active {
-  color: #FF6A00;
-  background: #FFF7E6;
-}
-
-/* 用户操作区域 */
-.user-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-/* 认证按钮（未登录状态） */
-.auth-btn {
-  padding: 8px 20px;
-  border-radius: 18px;
-  font-size: 14px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.25s ease;
-  cursor: pointer;
-}
-
-.login-btn {
-  color: #FF6A00;
-  background-color: transparent;
-  border: 1.5px solid #FF6A00;
-}
-
-.login-btn:active {
-  background-color: #FFF7E6;
-  transform: scale(0.96);
-}
-
-.register-btn {
-  color: white;
-  background: linear-gradient(135deg, #FF6A00 0%, #FF8533 100%);
+.search-input {
+  flex: 1;
   border: none;
-  box-shadow: 0 4px 12px rgba(255, 106, 0, 0.25);
-}
-
-.register-btn:active {
-  transform: scale(0.96);
-  box-shadow: 0 2px 8px rgba(255, 106, 0, 0.35);
-}
-
-/* 用户信息（已登录状态） */
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-  padding: 4px 12px 4px 4px;
-  border-radius: 20px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.user-info:active {
-  background-color: #f5f5f5;
-  transform: scale(0.98);
-}
-
-.user-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #FF6A00;
-  background-color: #e0e0e0;
-}
-
-.user-nickname {
-  font-size: 14px;
-  font-weight: 500;
+  background: none;
+  font-size: 13px;
   color: #333;
-  max-width: 80px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  outline: none;
+  width: 0;
+  min-width: 0;
 }
 
-/* 响应式适配 */
-@media (max-width: 360px) {
-  .brand-name {
-    font-size: 16px;
-  }
-
-  .auth-btn {
-    padding: 6px 14px;
-    font-size: 13px;
-  }
-
-  .user-nickname {
-    max-width: 60px;
-    font-size: 13px;
-  }
+.search-input::placeholder {
+  color: #bbb;
 }
 
 @media (min-width: 769px) {
   .header-container {
     max-width: 750px;
-    padding: 12px 24px;
+    padding: 0 24px;
   }
 }
 </style>

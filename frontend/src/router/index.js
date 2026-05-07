@@ -120,7 +120,6 @@ const routes = [
     name: 'Profile',
     component: () => import('../views/Profile.vue'),
     meta: {
-      requiresAuth: true,
       title: '我的',
       showTabBar: true
     }
@@ -205,7 +204,7 @@ const router = createRouter({
 
 // 白名单路径（无需登录即可访问）
 const publicPaths = ['/', '/login', '/register', '/forgot-password', '/db-test', '/products', '/products/:id', '/categories',
-  '/community', '/community/posts/:id', '/boards', '/boards/:id', '/users/:id', '/activities', '/activities/:id']
+  '/community', '/community/posts/:id', '/boards', '/boards/:id', '/users/:id', '/activities', '/activities/:id', '/profile']
 
 // 全局前置守卫
 router.beforeEach((to, from, next) => {
