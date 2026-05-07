@@ -1,24 +1,38 @@
 <template>
-  <div class="post-card" @click="$emit('click')">
+  <div class="product-card" @click="$emit('click')">
     <div class="card-header">
-      <img :src="post.userAvatar || defaultAvatar" class="avatar" loading="lazy" @error="onAvatarError" />
+      <img :src="product.userAvatar || defaultAvatar" class="avatar" loading="lazy" @error="onAvatarError" />
       <div class="user-info">
-        <span class="username">{{ post.userName || '匿名用户' }}</span>
-        <span class="time">{{ formatTime(post.createdAt) }}</span>
+        <span class="username">{{ product.userName || product.sellerName || '校园卖家' }}</span>
+        <span class="time">{{ formatTime(product.createdAt) }}</span>
       </div>
       <div class="like-area" @click.stop>
         <LikeButton
-          :is-liked="post.isLiked"
-          :count="post.likeCount"
-          target-type="POST"
-          :target-id="post.id"
+          :is-liked="product.isLiked"
+          :count="product.likeCount"
+          target-type="PRODUCT"
+          :target-id="product.id"
           @toggled="onLikeToggled"
         />
       </div>
     </div>
 
-    <h3 class="post-title">{{ post.title }}</h3>
-    <p class="post-content" v-if="post.content">{{ truncateContent(post.content) }}</p>
+    <div class="product-body">
+      <img
+        v-if="product.coverImage"
+        :src="product.coverImage"
+        :alt="product.title"
+        class="product-image"
+        loading="lazy"
+        @error="onImageError"
+      />
+      <h3 class="product-title">{{ product.title }}</h3>
+      <div class="product-meta">
+        <span class="product-price">¥{{ formatPrice(product.price) }}</span>
+        <span v-if="product.originalPrice && product.originalPrice > product.price" class="original-price">¥{{ formatPrice(product.originalPrice) }}</span>
+        <span class="product-circle" v-if="product.circleName">{{ product.circleName }}</span>
+      </div>
+    </div>
 
     <div class="card-footer">
       <span class="stat-item">
@@ -26,15 +40,14 @@
           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
           <circle cx="12" cy="12" r="3"/>
         </svg>
-        <span>{{ formatCount(post.viewCount) }}</span>
+        <span>{{ formatCount(product.viewCount) }}</span>
       </span>
       <span class="stat-item">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
         </svg>
-        <span>{{ formatCount(post.commentCount) }}</span>
+        <span>{{ formatCount(product.commentCount) }}</span>
       </span>
-      <span class="post-type-tag" :class="postTypeClass">{{ post.postTypeText || post.postType }}</span>
     </div>
   </div>
 </template>
@@ -43,18 +56,12 @@
 import LikeButton from './LikeButton.vue'
 
 const props = defineProps({
-  post: { type: Object, required: true }
+  product: { type: Object, required: true }
 })
 
 const emit = defineEmits(['click', 'like-toggled'])
-const defaultAvatar = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#eee"/><circle cx="20" cy="15" r="8" fill="#ccc"/><ellipse cx="20" cy="35" rx="12" ry="8" fill="#ccc"/></svg>')
 
-const postTypeClass = {
-  DISCUSSION: 'type-discussion',
-  SHOWCASE: 'type-showcase',
-  HELP: 'type-help',
-  ACTIVITY: 'type-activity'
-}[props.post.postType] || 'type-discussion'
+const defaultAvatar = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#eee"/><circle cx="20" cy="15" r="8" fill="#ccc"/><ellipse cx="20" cy="35" rx="12" ry="8" fill="#ccc"/></svg>')
 
 function formatTime(dateStr) {
   if (!dateStr) return ''
@@ -75,24 +82,28 @@ function formatCount(count) {
   return count.toString()
 }
 
-function truncateContent(content) {
-  if (!content) return ''
-  return content.length > 120 ? content.substring(0, 120) + '...' : content
+function formatPrice(price) {
+  if (!price) return '0'
+  return Number(price).toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
 }
 
 function onAvatarError(e) {
   e.target.src = defaultAvatar
 }
 
+function onImageError(e) {
+  e.target.style.display = 'none'
+}
+
 function onLikeToggled(isLiked, count) {
-  props.post.isLiked = isLiked
-  props.post.likeCount = count
+  props.product.isLiked = isLiked
+  props.product.likeCount = count
   emit('like-toggled', { isLiked, count })
 }
 </script>
 
 <style scoped>
-.post-card {
+.product-card {
   background: #fff;
   border-radius: 12px;
   padding: 16px;
@@ -101,7 +112,7 @@ function onLikeToggled(isLiked, count) {
   transition: transform 0.15s ease;
 }
 
-.post-card:active {
+.product-card:active {
   transform: scale(0.98);
 }
 
@@ -109,7 +120,7 @@ function onLikeToggled(isLiked, count) {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .avatar {
@@ -146,29 +157,64 @@ function onLikeToggled(isLiked, count) {
   flex-shrink: 0;
 }
 
-.post-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #222;
-  margin-bottom: 6px;
-  line-height: 1.4;
+.product-body {
+  display: flex;
+  flex-direction: column;
 }
 
-.post-content {
-  font-size: 14px;
-  color: #666;
-  line-height: 1.6;
+.product-image {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #f5f5f5;
   margin-bottom: 10px;
+}
+
+.product-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.4;
+  margin: 0 0 8px;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.card-footer {
+.product-meta {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.product-price {
+  font-size: 17px;
+  font-weight: 700;
+  color: #FF6A00;
+}
+
+.original-price {
+  font-size: 12px;
+  color: #bbb;
+  text-decoration: line-through;
+}
+
+.product-circle {
+  font-size: 11px;
+  color: #FF6A00;
+  background: #FFF7E6;
+  padding: 2px 8px;
+  border-radius: 8px;
+  margin-left: auto;
+}
+
+.card-footer {
+  display: flex;
+  gap: 20px;
+  align-items: center;
   padding-top: 10px;
   border-top: 1px solid #f5f5f5;
 }
@@ -180,16 +226,4 @@ function onLikeToggled(isLiked, count) {
   font-size: 13px;
   color: #999;
 }
-
-.post-type-tag {
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 10px;
-  margin-left: auto;
-}
-
-.type-discussion { background: #e3f2fd; color: #1565c0; }
-.type-showcase { background: #fce4ec; color: #c62828; }
-.type-help { background: #fff3e0; color: #e65100; }
-.type-activity { background: #e8f5e9; color: #2e7d32; }
 </style>

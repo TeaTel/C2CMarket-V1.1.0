@@ -53,32 +53,12 @@
           :post="item"
           @click="goToPost(item.id)"
         />
-        <div
+        <ProductCard
           v-for="item in feedItems.filter(i => i.itemType === 'PRODUCT')"
           :key="'product-' + item.id"
-          class="feed-product-card"
+          :product="item"
           @click="goToProduct(item.id)"
-        >
-          <img v-if="item.coverImage" :src="item.coverImage" class="feed-product-image" loading="lazy" />
-          <div v-else class="feed-product-placeholder">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-              <circle cx="8.5" cy="8.5" r="1.5"/>
-              <polyline points="21 15 16 10 5 21"/>
-            </svg>
-          </div>
-          <div class="feed-product-info">
-            <h4 class="feed-product-title">{{ item.title }}</h4>
-            <div class="feed-product-meta">
-              <span class="feed-product-price">¥{{ formatPrice(item.price) }}</span>
-              <span v-if="item.originalPrice && item.originalPrice > item.price" class="feed-product-original">¥{{ formatPrice(item.originalPrice) }}</span>
-            </div>
-            <div class="feed-product-footer">
-              <span class="feed-product-seller">{{ item.userName || item.sellerName || '校园卖家' }}</span>
-              <span class="feed-product-circle" v-if="item.circleName">{{ item.circleName }}</span>
-            </div>
-          </div>
-        </div>
+        />
       </div>
 
       <div v-if="!loading && hasMore && feedItems.length > 0" class="load-more">
@@ -102,6 +82,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
 import { feedApi, categoryApi } from '../services/api'
 import PostCard from '../components/PostCard.vue'
+import ProductCard from '../components/ProductCard.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -264,14 +245,6 @@ function goToProduct(productId) {
 
 function goToLogin() {
   router.push({ path: '/login', query: { redirect: '/' } })
-}
-
-function formatPrice(price) {
-  if (!price) return '0'
-  return Number(price).toLocaleString('zh-CN', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2
-  })
 }
 </script>
 
@@ -454,101 +427,6 @@ function formatPrice(price) {
   gap: 12px;
 }
 
-.feed-product-card {
-  display: flex;
-  gap: 12px;
-  background: #fff;
-  border-radius: 12px;
-  padding: 12px;
-  cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-}
-
-.feed-product-card:active {
-  transform: scale(0.98);
-}
-
-.feed-product-image {
-  width: 84px;
-  height: 84px;
-  border-radius: 8px;
-  object-fit: cover;
-  background: #f5f5f5;
-  flex-shrink: 0;
-}
-
-.feed-product-placeholder {
-  width: 84px;
-  height: 84px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-  color: #ccc;
-  flex-shrink: 0;
-}
-
-.feed-product-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-width: 0;
-}
-
-.feed-product-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  margin: 0;
-}
-
-.feed-product-meta {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-}
-
-.feed-product-price {
-  font-size: 16px;
-  font-weight: 700;
-  color: #FF6A00;
-}
-
-.feed-product-original {
-  font-size: 12px;
-  color: #bbb;
-  text-decoration: line-through;
-}
-
-.feed-product-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.feed-product-seller {
-  font-size: 12px;
-  color: #999;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 60%;
-}
-
-.feed-product-circle {
-  font-size: 11px;
-  color: #fff;
-  background: linear-gradient(135deg, #FF6A00, #FF8533);
-  padding: 2px 8px;
-  border-radius: 8px;
-}
-
 .load-more {
   text-align: center;
   padding: 16px 0 8px;
@@ -596,17 +474,6 @@ function formatPrice(price) {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
-  }
-
-  .feed-product-card {
-    flex-direction: column;
-  }
-
-  .feed-product-image,
-  .feed-product-placeholder {
-    width: 100%;
-    height: 160px;
-    border-radius: 8px 8px 0 0;
   }
 }
 </style>
