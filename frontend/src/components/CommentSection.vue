@@ -54,13 +54,14 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
-import { postApi } from '../services/api'
+import { ref } from 'vue'
+import { postApi, productCommentApi } from '../services/api'
 import { useAuthStore } from '../store/auth'
 import LikeButton from './LikeButton.vue'
 
 const props = defineProps({
-  postId: { type: [Number, String], required: true },
+  targetId: { type: [Number, String], required: true },
+  targetType: { type: String, default: 'post' },
   initialComments: { type: Array, default: () => [] }
 })
 
@@ -73,6 +74,8 @@ const replyTo = ref(null)
 const defaultAvatar = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#eee"/><circle cx="20" cy="15" r="8" fill="#ccc"/><ellipse cx="20" cy="35" rx="12" ry="8" fill="#ccc"/></svg>')
 
 const currentUserId = auth.currentUser?.id
+
+const commentApi = props.targetType === 'product' ? productCommentApi : postApi
 
 function formatTime(dateStr) {
   if (!dateStr) return ''
@@ -97,9 +100,7 @@ function cancelReply() {
   newComment.value = ''
 }
 
-function getReplyTargetName(reply) {
-  return ''
-}
+function getReplyTargetName(reply) { return '' }
 
 async function submitComment() {
   if (!newComment.value.trim()) return
@@ -107,7 +108,7 @@ async function submitComment() {
     const data = { content: newComment.value.trim() }
     if (replyTo.value) data.parentId = replyTo.value.id
 
-    const res = await postApi.addComment(props.postId, data)
+    const res = await commentApi.addComment(props.targetId, data)
     if (res.code === 200) {
       if (replyTo.value) {
         if (!replyTo.value.replies) replyTo.value.replies = []
@@ -116,6 +117,7 @@ async function submitComment() {
       } else {
         comments.value.unshift(res.data)
       }
+      totalCount.value++
       newComment.value = ''
     }
   } catch (e) {}
@@ -123,8 +125,9 @@ async function submitComment() {
 
 async function deleteComment(commentId) {
   try {
-    await postApi.deleteComment(commentId)
+    await commentApi.deleteComment(commentId)
     comments.value = comments.value.filter(c => c.id !== commentId)
+    totalCount.value = Math.max(0, totalCount.value - 1)
   } catch (e) {}
 }
 
@@ -136,9 +139,11 @@ function onCommentLikeToggled(comment, isLiked, count) {
 async function loadComments() {
   loading.value = true
   try {
-    const res = await postApi.getComments(props.postId)
+    const res = await commentApi.getComments(props.targetId)
     if (res.code === 200) {
-      comments.value = res.data || []
+      const list = res.data || []
+      comments.value = Array.isArray(list) ? list : (list.list || list.records || [])
+      totalCount.value = list.length || list.total || 0
     }
   } catch (e) {} finally {
     loading.value = false

@@ -54,7 +54,7 @@
       </section>
 
       <section class="comment-section-wrapper">
-        <CommentSection :post-id="post.id" :initial-comments="[]" />
+        <CommentSection :target-id="post.id" :target-type="'post'" :initial-comments="[]" />
       </section>
     </main>
 

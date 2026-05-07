@@ -61,14 +61,18 @@
       <section v-if="product.detailImages?.length" class="extra-images">
         <img v-for="(img, idx) in product.detailImages" :key="idx" :src="img" class="extra-img" loading="lazy" @click="previewImage(img)" />
       </section>
+
+      <section class="comment-section-wrapper">
+        <CommentSection :target-id="product.id" :target-type="'product'" :initial-comments="[]" />
+      </section>
     </main>
 
     <footer v-if="product" class="bottom-bar">
-      <div class="bottom-comment-input" @click="focusChat">
+      <div class="bottom-comment-input" @click="focusComment">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#999" stroke-width="2">
           <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
         </svg>
-        <span>和卖家聊聊...</span>
+        <span>添加评论...</span>
       </div>
       <div class="bottom-actions">
         <LikeButton :is-liked="product.isLiked" :count="product.likeCount || 0" target-type="PRODUCT" :target-id="product.id" @toggled="onLikeToggled" />
@@ -80,7 +84,12 @@
             <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
           </svg>
         </button>
-        <button class="buy-btn" @click="handleBuy">我想要</button>
+        <button class="action-btn" @click="focusComment">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+          </svg>
+          <span class="action-count">{{ product.commentCount || 0 }}</span>
+        </button>
       </div>
     </footer>
   </div>
@@ -92,6 +101,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { productApi, followApi } from '../services/api'
 import { useAuthStore } from '../store/auth'
 import LikeButton from '../components/LikeButton.vue'
+import CommentSection from '../components/CommentSection.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -155,7 +165,7 @@ function onLikeToggled(isLiked, count) {
 }
 
 function toggleFavorite() { isFavorited.value = !isFavorited.value }
-
+function focusComment() { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }) }
 function previewImage(url) { window.open(url, '_blank') }
 function handleShare() { navigator.clipboard?.writeText(window.location.href) }
 
@@ -165,14 +175,6 @@ function focusChat() {
     return
   }
   router.push({ path: `/chat/${product.value.sellerId}`, query: { productId: product.value.id } })
-}
-
-function handleBuy() {
-  if (!auth.isAuthenticated) {
-    router.push({ path: '/login', query: { redirect: route.fullPath } })
-    return
-  }
-  router.push({ path: `/chat/${product.value.sellerId}`, query: { productId: product.value.id, preMessage: `你好！我对【${product.value.name}】很感兴趣~` } })
 }
 
 function formatPrice(price) {
@@ -470,18 +472,12 @@ function onImageError(e) { e.target.style.display = 'none' }
 
 .action-btn:active { background: #F0F2F5; }
 
-.buy-btn {
-  padding: 8px 18px;
-  border-radius: 4px;
-  border: none;
-  background: linear-gradient(135deg, #FF6A00, #FF8533);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  margin-left: 8px;
-  transition: transform 0.15s ease;
+.action-count {
+  font-size: 13px;
+  color: #666666;
 }
 
-.buy-btn:active { transform: scale(0.96); }
+.comment-section-wrapper {
+  margin-top: 16px;
+}
 </style>

@@ -511,6 +511,13 @@ export const postApi = {
   toggleEssence(id, isEssence) { return api.put(`/v2/posts/${id}/essence`, null, { params: { isEssence } }) }
 }
 
+// ==================== 商品评论 API ====================
+export const productCommentApi = {
+  addComment(productId, data) { return api.post(`/v2/products/${productId}/comments`, data) },
+  getComments(productId, params) { return api.get(`/v2/products/${productId}/comments`, { params }) },
+  deleteComment(commentId) { return api.delete(`/v2/products/comments/${commentId}`) }
+}
+
 // ==================== 点赞 API ====================
 export const likeApi = {
   toggleLike(targetType, targetId) { return api.post('/v2/likes/toggle', null, { params: { targetType, targetId } }) },

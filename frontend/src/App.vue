@@ -1,10 +1,10 @@
 <template>
   <div id="app" class="app-container">
-    <!-- 全局Header（登录/注册/用户信息） -->
-    <AppHeader />
+    <!-- 全局Header：仅在主页/列表等主Tab页面显示，详情页自动隐藏 -->
+    <AppHeader v-if="showAppHeader" />
 
     <!-- 主内容区域（带底部TabBar间距） -->
-    <main class="main-content" :class="{ 'with-tabbar': showTabBar }">
+    <main class="main-content" :class="{ 'with-tabbar': showTabBar, 'no-header': !showAppHeader }">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <component :is="Component" />
@@ -30,6 +30,11 @@ const authStore = useAuthStore()
 
 // 根据路由meta判断是否显示TabBar
 const showTabBar = computed(() => {
+  return route.meta.showTabBar === true
+})
+
+// 详情页/独立页面自动隐藏全局Header（关注/发现/校区Tabs）
+const showAppHeader = computed(() => {
   return route.meta.showTabBar === true
 })
 
@@ -94,6 +99,11 @@ onMounted(() => {
   padding-top: 48px; /* Header高度 */
   padding-bottom: 0; /* 默认无底部间距 */
   transition: padding-bottom 0.3s ease;
+}
+
+/* 详情页无Header时去掉top padding */
+.main-content.no-header {
+  padding-top: 0;
 }
 
 /* 当显示TabBar时，添加底部间距 */
