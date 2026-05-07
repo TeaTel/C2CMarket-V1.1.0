@@ -35,6 +35,44 @@
         </div>
       </section>
 
+      <!-- 社区视图 -->
+      <section v-if="feedTab === 'feed'" class="community-feed">
+        <div v-if="feedLoading" class="loading-state">
+          <div class="skeleton-grid">
+            <div v-for="i in 4" :key="i" class="skeleton-card" style="height:100px;"></div>
+          </div>
+        </div>
+        <div v-else-if="feedError" class="error-state">
+          <p>{{ feedError }}</p>
+          <button @click="loadFeed" class="retry-btn">重试</button>
+        </div>
+        <div v-else-if="feedItems.length === 0" class="empty-state">
+          <div class="empty-icon">💬</div>
+          <p class="empty-text">暂无社区内容，快去发布第一条帖子吧！</p>
+          <router-link to="/community/posts/create" class="create-post-btn">发布帖子</router-link>
+        </div>
+        <div v-else class="feed-list">
+          <PostCard
+            v-for="item in feedItems.filter(i => i.itemType === 'POST')"
+            :key="'post-' + item.id"
+            :post="item"
+            @click="goToPost(item.id)"
+          />
+          <div
+            v-for="item in feedItems.filter(i => i.itemType === 'PRODUCT')"
+            :key="'product-' + item.id"
+            class="feed-product-card"
+            @click="goToDetail(item.id)"
+          >
+            <img v-if="item.coverImage" :src="item.coverImage" class="feed-product-image" />
+            <div class="feed-product-info">
+              <h4>{{ item.title }}</h4>
+              <span class="feed-product-price">¥{{ item.price }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section class="quick-categories">
         <div
           v-for="category in quickCategories"
@@ -49,7 +87,15 @@
         </div>
       </section>
 
-      <section class="products-section">
+      <section class="feed-section">
+        <div class="feed-tabs">
+          <button :class="{ active: feedTab === 'shop' }" @click="feedTab = 'shop'">🛍️ 逛集市</button>
+          <button :class="{ active: feedTab === 'feed' }" @click="feedTab = 'feed'">💬 逛社区</button>
+        </div>
+      </section>
+
+      <!-- 商品视图 -->
+      <section v-if="feedTab === 'shop'" class="products-section">
         <div class="section-header">
           <h3 class="section-title">为你推荐</h3>
           <router-link to="/products" class="view-more">
@@ -147,9 +193,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { productApi } from '../services/api'
+import { productApi, feedApi } from '../services/api'
+import PostCard from '../components/PostCard.vue'
 
 const router = useRouter()
 
@@ -163,6 +210,11 @@ const currentPage = ref(1)
 const pageSize = 10
 
 const searchKeyword = ref('')
+
+const feedTab = ref('shop')
+const feedItems = ref([])
+const feedLoading = ref(false)
+const feedError = ref(null)
 
 const quickCategories = ref([
   { id: 1, name: '数码电子', icon: '📱', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
@@ -263,6 +315,31 @@ function clearSearch() {
 function goToDetail(productId) {
   router.push(`/products/${productId}`)
 }
+
+function goToPost(postId) {
+  router.push(`/community/posts/${postId}`)
+}
+
+async function loadFeed() {
+  feedLoading.value = true
+  feedError.value = null
+  try {
+    const res = await feedApi.getFeed({ page: 1, size: 12 })
+    if (res.code === 200) {
+      feedItems.value = res.data.list || []
+    }
+  } catch (e) {
+    feedError.value = '加载社区内容失败'
+  } finally {
+    feedLoading.value = false
+  }
+}
+
+watch(feedTab, (newTab) => {
+  if (newTab === 'feed' && feedItems.value.length === 0) {
+    loadFeed()
+  }
+})
 
 function goToCategory(category) {
   router.push({ path: '/products', query: { categoryId: category.id } })
@@ -743,5 +820,99 @@ function formatPrice(price) {
   flex: 1;
   height: 1px;
   background: linear-gradient(to right, transparent, #e0e0e0, transparent);
+}
+
+/* Feed Tab 切换 */
+.feed-tabs {
+  display: flex;
+  gap: 0;
+  padding: 4px 16px 0;
+  background: #fff;
+}
+
+.feed-tabs button {
+  flex: 1;
+  padding: 10px 0;
+  border: none;
+  background: #f5f5f5;
+  border-radius: 12px 12px 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  margin: 0 2px;
+}
+
+.feed-tabs button.active {
+  background: #fff;
+  color: #FF6A00;
+  font-weight: 700;
+  border-bottom: 3px solid #FF6A00;
+}
+
+/* 社区视图 */
+.community-feed {
+  padding: 0 16px 16px;
+}
+
+.feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.feed-product-card {
+  display: flex;
+  gap: 12px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.feed-product-image {
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #eee;
+  flex-shrink: 0;
+}
+
+.feed-product-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.feed-product-info h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.feed-product-price {
+  font-size: 16px;
+  font-weight: 700;
+  color: #FF6A00;
+}
+
+.create-post-btn {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 8px 24px;
+  background: linear-gradient(135deg, #FF6A00, #FF8533);
+  color: #fff;
+  border-radius: 20px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
 }
 </style>

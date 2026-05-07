@@ -5,8 +5,15 @@
       <div class="brand-section">
         <router-link to="/" class="brand-link">
           <span class="brand-icon">🎓</span>
-          <span class="brand-name">校园二手</span>
+          <span class="brand-name">校园集市</span>
+          <span class="brand-sub">· 社区</span>
         </router-link>
+      </div>
+
+      <!-- 中间：快捷导航 -->
+      <div class="quick-nav">
+        <router-link to="/community" class="nav-link">社区</router-link>
+        <router-link to="/boards" class="nav-link">圈子</router-link>
       </div>
 
       <!-- 右侧：用户操作区 -->
@@ -89,6 +96,36 @@ const defaultAvatar = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0
   font-weight: 700;
   color: #FF6A00;
   letter-spacing: 1px;
+}
+
+.brand-sub {
+  font-size: 13px;
+  font-weight: 400;
+  color: #999;
+  margin-left: 2px;
+}
+
+/* 快捷导航 */
+.quick-nav {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.nav-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+  text-decoration: none;
+  padding: 4px 10px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.nav-link:hover,
+.nav-link.router-link-active {
+  color: #FF6A00;
+  background: #FFF7E6;
 }
 
 /* 用户操作区域 */

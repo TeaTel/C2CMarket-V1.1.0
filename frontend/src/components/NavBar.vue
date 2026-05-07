@@ -46,6 +46,20 @@
           </svg>
 
           <svg
+            v-else-if="tab.icon === 'community'"
+            class="tab-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+            <path d="M16 3.13a4 4 0 010 7.75"/>
+          </svg>
+
+          <svg
             v-else-if="tab.icon === 'publish'"
             class="tab-icon publish-icon"
             viewBox="0 0 24 24"
@@ -94,7 +108,7 @@ import { messageApi } from '../services/api'
 const route = useRoute()
 const authStore = useAuthStore()
 
-// Tab配置（闲鱼风格：首页/分类/发布+/消息/我的）
+// Tab配置（社交化转型：首页/圈子/发布+/消息/我的）- 6项适应社区模式
 const tabs = [
   {
     path: '/',
@@ -103,8 +117,14 @@ const tabs = [
     badge: false
   },
   {
-    path: '/categories',
-    label: '分类',
+    path: '/community',
+    label: '社区',
+    icon: 'community',
+    badge: false
+  },
+  {
+    path: '/boards',
+    label: '圈子',
     icon: 'category',
     badge: false
   },
@@ -113,7 +133,7 @@ const tabs = [
     label: '发布',
     icon: 'publish',
     badge: false,
-    isSpecial: true // 中间的发布按钮特殊样式
+    isSpecial: true
   },
   {
     path: '/messages',

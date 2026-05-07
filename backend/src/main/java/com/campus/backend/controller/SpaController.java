@@ -22,7 +22,13 @@ public class SpaController {
             "/orders",
             "/settings",
             "/chat/**",
-            "/products/**"
+            "/products/**",
+            // 社区功能路由
+            "/community",
+            "/community/**",
+            "/boards",
+            "/boards/**",
+            "/users/**"
     })
     public String forward() {
         return "forward:/index.html";

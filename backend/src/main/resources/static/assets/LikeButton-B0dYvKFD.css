@@ -1,0 +1,1 @@
+.like-button[data-v-1b3e4683]{display:inline-flex;align-items:center;gap:4px;padding:0;border:none;background:none;cursor:pointer;font-size:13px;color:#999;transition:color .2s,transform .2s}.like-button[data-v-1b3e4683]:hover{transform:scale(1.1)}.like-button.liked[data-v-1b3e4683],.count-liked[data-v-1b3e4683]{color:#ff4757}
