@@ -320,6 +320,7 @@ function formatPrice(price) {
 .main-nav-bar {
   display: flex;
   align-items: center;
+  justify-content: center;
   position: sticky;
   top: 48px;
   z-index: 99;
@@ -330,7 +331,8 @@ function formatPrice(price) {
 
 .nav-tabs {
   display: flex;
-  flex: 1;
+  max-width: 320px;
+  width: 100%;
 }
 
 .nav-tab {
@@ -365,19 +367,19 @@ function formatPrice(price) {
 }
 
 .search-box {
-  width: 120px;
+  position: absolute;
+  right: 12px;
   display: flex;
   align-items: center;
   gap: 6px;
   background: #f5f5f5;
   border-radius: 16px;
   padding: 6px 12px;
-  margin-left: 8px;
   transition: width 0.3s ease, box-shadow 0.2s ease;
 }
 
 .search-box:focus-within {
-  width: 150px;
+  width: 160px;
   background: #fff;
   box-shadow: 0 0 0 2px rgba(255, 106, 0, 0.3);
 }

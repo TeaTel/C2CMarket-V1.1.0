@@ -56,8 +56,10 @@ const defaultAvatar = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0
 
 <style scoped>
 .app-header {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 999;
   background-color: #ffffff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);

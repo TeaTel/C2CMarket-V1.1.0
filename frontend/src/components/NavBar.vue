@@ -3,7 +3,7 @@
   <nav class="tab-bar" v-if="showTabBar">
     <div class="tab-bar-container">
       <router-link
-        v-for="tab in normalTabs"
+        v-for="tab in leftTabs"
         :key="tab.path"
         :to="tab.path"
         class="tab-item"
@@ -70,7 +70,7 @@
         <span class="tab-label">{{ tab.label }}</span>
       </router-link>
 
-      <!-- 发布按钮（特殊处理，点击弹出ActionSheet） -->
+      <!-- 发布按钮（中间位置，点击弹出ActionSheet） -->
       <button class="tab-item publish-tab-item" @click="showPublishSheet = true">
         <div class="tab-icon-wrapper">
           <svg
@@ -84,6 +84,51 @@
         </div>
         <span class="tab-label">发布</span>
       </button>
+
+      <router-link
+        v-for="tab in rightTabs"
+        :key="tab.path"
+        :to="tab.path"
+        class="tab-item"
+        :class="{ active: isActive(tab.path) }"
+      >
+        <div class="tab-icon-wrapper">
+          <span
+            v-if="tab.badge && unreadCount > 0"
+            class="tab-badge"
+          >
+            {{ unreadCount > 99 ? '99+' : unreadCount }}
+          </span>
+
+          <svg
+            v-if="tab.icon === 'activity'"
+            class="tab-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+
+          <svg
+            v-else-if="tab.icon === 'profile'"
+            class="tab-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </div>
+
+        <span class="tab-label">{{ tab.label }}</span>
+      </router-link>
     </div>
   </nav>
 
@@ -102,7 +147,7 @@ const authStore = useAuthStore()
 
 const showPublishSheet = ref(false)
 
-const normalTabs = [
+const leftTabs = [
   {
     path: '/',
     label: '首页',
@@ -114,7 +159,10 @@ const normalTabs = [
     label: '消息',
     icon: 'message',
     badge: true
-  },
+  }
+]
+
+const rightTabs = [
   {
     path: '/activities',
     label: '活动',
