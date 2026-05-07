@@ -25,6 +25,13 @@
             <if test="query.sellerId != null">
                 AND seller_id = #{query.sellerId}
             </if>
+            <!-- 卖家ID列表筛选 -->
+            <if test="query.sellerIds != null and query.sellerIds.size() > 0">
+                AND seller_id IN
+                <foreach collection="query.sellerIds" item="sid" open="(" separator="," close=")">
+                    #{sid}
+                </foreach>
+            </if>
             <!-- 成色筛选 -->
             <if test="query.conditionLevel != null">
                 AND condition_level = #{query.conditionLevel}
@@ -67,6 +74,12 @@
             </if>
             <if test="query.sellerId != null">
                 AND seller_id = #{query.sellerId}
+            </if>
+            <if test="query.sellerIds != null and query.sellerIds.size() > 0">
+                AND seller_id IN
+                <foreach collection="query.sellerIds" item="sid" open="(" separator="," close=")">
+                    #{sid}
+                </foreach>
             </if>
             <if test="query.conditionLevel != null">
                 AND condition_level = #{query.conditionLevel}

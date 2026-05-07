@@ -17,6 +17,12 @@
             <if test="query.userId != null">
                 AND user_id = #{query.userId}
             </if>
+            <if test="query.userIds != null and query.userIds.size() > 0">
+                AND user_id IN
+                <foreach collection="query.userIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
             <if test="query.status != null and query.status != ''">
                 AND status = #{query.status}
             </if>

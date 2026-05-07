@@ -1,6 +1,7 @@
 package com.campus.backend.dto;
 
 import lombok.Data;
+import java.util.List;
 
 /**
  * 商品查询条件DTO
@@ -16,6 +17,9 @@ public class ProductQueryDTO {
 
     /** 卖家ID筛选 */
     private Long sellerId;
+
+    /** 卖家ID列表筛选（支持IN查询） */
+    private List<Long> sellerIds;
 
     /** 状态筛选 (默认查在售的) */
     private Integer status = 1;

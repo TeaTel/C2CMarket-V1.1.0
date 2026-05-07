@@ -1,8 +1,19 @@
 <template>
   <div class="home-page">
-    <header class="search-header">
-      <div class="search-bar">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+    <nav class="main-nav-bar">
+      <div class="nav-tabs">
+        <button
+          v-for="tab in mainTabs"
+          :key="tab.key"
+          class="nav-tab"
+          :class="{ active: activeTab === tab.key }"
+          @click="switchMainTab(tab.key)"
+        >
+          {{ tab.label }}
+        </button>
+      </div>
+      <div class="search-box">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
           <circle cx="11" cy="11" r="8"/>
           <path d="M21 21l-4.35-4.35"/>
         </svg>
@@ -10,227 +21,161 @@
           type="text"
           v-model="searchKeyword"
           class="search-input"
-          placeholder="搜搜你想要的宝贝..."
+          placeholder="搜索..."
           @keyup.enter="handleSearch"
         />
-        <button v-if="searchKeyword" @click="clearSearch" class="clear-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M15 9l-6 6M9 9l6 6"/>
-          </svg>
+      </div>
+    </nav>
+
+    <nav class="circle-sub-nav" v-if="circles.length > 0">
+      <button
+        class="circle-tag"
+        :class="{ active: activeCircle === null }"
+        @click="switchCircle(null)"
+      >
+        全部
+      </button>
+      <button
+        v-for="circle in circles"
+        :key="circle.id"
+        class="circle-tag"
+        :class="{ active: activeCircle === circle.id }"
+        @click="switchCircle(circle.id)"
+      >
+        {{ circle.icon || '' }} {{ circle.name }}
+      </button>
+    </nav>
+
+    <main class="feed-content">
+      <div v-if="loading" class="loading-state">
+        <div v-for="i in 6" :key="i" class="skeleton-card"></div>
+      </div>
+
+      <div v-else-if="error" class="error-state">
+        <div class="error-icon">😔</div>
+        <p class="error-text">{{ error }}</p>
+        <button @click="loadFeed" class="retry-btn">点击重试</button>
+      </div>
+
+      <div v-else-if="showLoginGuide" class="login-guide">
+        <div class="login-guide-card">
+          <div class="login-guide-icon">🔒</div>
+          <h3 class="login-guide-title">登录后可查看关注内容</h3>
+          <p class="login-guide-desc">关注感兴趣的账号，获取他们的最新动态</p>
+          <button @click="goToLogin" class="login-guide-btn">去登录</button>
+        </div>
+      </div>
+
+      <div v-else-if="!showLoginGuide && feedItems.length === 0" class="empty-state">
+        <div class="empty-icon">{{ emptyIcon }}</div>
+        <p class="empty-text">{{ emptyText }}</p>
+        <p class="empty-subtext">{{ emptySubText }}</p>
+      </div>
+
+      <div v-else class="feed-list">
+        <PostCard
+          v-for="item in feedItems.filter(i => i.itemType === 'POST')"
+          :key="'post-' + item.id"
+          :post="item"
+          @click="goToPost(item.id)"
+        />
+        <div
+          v-for="item in feedItems.filter(i => i.itemType === 'PRODUCT')"
+          :key="'product-' + item.id"
+          class="feed-product-card"
+          @click="goToProduct(item.id)"
+        >
+          <img v-if="item.coverImage" :src="item.coverImage" class="feed-product-image" loading="lazy" />
+          <div v-else class="feed-product-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </div>
+          <div class="feed-product-info">
+            <h4 class="feed-product-title">{{ item.title }}</h4>
+            <div class="feed-product-meta">
+              <span class="feed-product-price">¥{{ formatPrice(item.price) }}</span>
+              <span v-if="item.originalPrice && item.originalPrice > item.price" class="feed-product-original">¥{{ formatPrice(item.originalPrice) }}</span>
+            </div>
+            <div class="feed-product-footer">
+              <span class="feed-product-seller">{{ item.userName || item.sellerName || '校园卖家' }}</span>
+              <span class="feed-product-circle" v-if="item.circleName">{{ item.circleName }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="!loading && hasMore && feedItems.length > 0" class="load-more">
+        <button @click="loadMoreItems" :disabled="loadingMore" class="load-more-btn">
+          {{ loadingMore ? '加载中...' : '上滑加载更多' }}
         </button>
       </div>
-    </header>
 
-    <main class="home-content">
-      <section class="banner-section">
-        <div class="banner-slider">
-          <div class="banner-slide">
-            <div class="banner-content">
-              <h2 class="banner-title">校园闲置好物</h2>
-              <p class="banner-subtitle">让闲置流动起来，让生活更美好</p>
-              <button @click="$router.push('/products/create')" class="banner-btn">立即发布</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 社区视图 -->
-      <section v-if="feedTab === 'feed'" class="community-feed">
-        <div v-if="feedLoading" class="loading-state">
-          <div class="skeleton-grid">
-            <div v-for="i in 4" :key="i" class="skeleton-card" style="height:100px;"></div>
-          </div>
-        </div>
-        <div v-else-if="feedError" class="error-state">
-          <p>{{ feedError }}</p>
-          <button @click="loadFeed" class="retry-btn">重试</button>
-        </div>
-        <div v-else-if="feedItems.length === 0" class="empty-state">
-          <div class="empty-icon">💬</div>
-          <p class="empty-text">暂无社区内容，快去发布第一条帖子吧！</p>
-          <router-link to="/community/posts/create" class="create-post-btn">发布帖子</router-link>
-        </div>
-        <div v-else class="feed-list">
-          <PostCard
-            v-for="item in feedItems.filter(i => i.itemType === 'POST')"
-            :key="'post-' + item.id"
-            :post="item"
-            @click="goToPost(item.id)"
-          />
-          <div
-            v-for="item in feedItems.filter(i => i.itemType === 'PRODUCT')"
-            :key="'product-' + item.id"
-            class="feed-product-card"
-            @click="goToDetail(item.id)"
-          >
-            <img v-if="item.coverImage" :src="item.coverImage" class="feed-product-image" />
-            <div class="feed-product-info">
-              <h4>{{ item.title }}</h4>
-              <span class="feed-product-price">¥{{ item.price }}</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="quick-categories">
-        <div
-          v-for="category in quickCategories"
-          :key="category.id"
-          @click="goToCategory(category)"
-          class="category-item"
-        >
-          <div class="category-icon" :style="{ background: category.color }">
-            {{ category.icon }}
-          </div>
-          <span class="category-name">{{ category.name }}</span>
-        </div>
-      </section>
-
-      <section class="feed-section">
-        <div class="feed-tabs">
-          <button :class="{ active: feedTab === 'shop' }" @click="feedTab = 'shop'">🛍️ 逛集市</button>
-          <button :class="{ active: feedTab === 'feed' }" @click="feedTab = 'feed'">💬 逛社区</button>
-        </div>
-      </section>
-
-      <!-- 商品视图 -->
-      <section v-if="feedTab === 'shop'" class="products-section">
-        <div class="section-header">
-          <h3 class="section-title">为你推荐</h3>
-          <router-link to="/products" class="view-more">
-            查看更多
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="9,18 15,12 9,6"/>
-            </svg>
-          </router-link>
-        </div>
-
-        <div v-if="loading" class="loading-state">
-          <div class="skeleton-grid">
-            <div v-for="i in 6" :key="i" class="skeleton-card">
-              <div class="skeleton-image"></div>
-              <div class="skeleton-info">
-                <div class="skeleton-text"></div>
-                <div class="skeleton-price"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div v-else-if="error && products.length === 0" class="error-state">
-          <div class="error-icon">😔</div>
-          <p class="error-text">{{ error }}</p>
-          <button @click="retryLoad" class="retry-btn">点击重试</button>
-        </div>
-
-        <div v-else-if="products.length === 0" class="empty-state">
-          <div class="empty-icon">📦</div>
-          <p class="empty-text">暂无商品，快去发布你的闲置物品吧！</p>
-        </div>
-
-        <div v-else class="waterfall-grid">
-          <div
-            v-for="product in products"
-            :key="product.id"
-            @click="goToDetail(product.id)"
-            class="product-card"
-          >
-            <div class="product-image-wrapper">
-              <img
-                v-if="getProductImage(product)"
-                :src="getProductImage(product)"
-                :alt="product.name"
-                class="product-image"
-                loading="lazy"
-                @error="onImageError"
-              />
-              <div v-else class="product-image-placeholder">
-                <span class="placeholder-icon">{{ getCategoryIcon(product.categoryId) }}</span>
-              </div>
-              <span v-if="product.conditionText && product.conditionText !== '未设置'" class="condition-tag">
-                {{ product.conditionText }}
-              </span>
-            </div>
-
-            <div class="product-info">
-              <h4 class="product-name line-clamp-2">{{ product.name }}</h4>
-              <div class="product-meta">
-                <span class="product-price">
-                  <small>¥</small>{{ formatPrice(product.price) }}
-                </span>
-                <span v-if="product.originalPrice && product.originalPrice > product.price" class="original-price">
-                  ¥{{ formatPrice(product.originalPrice) }}
-                </span>
-              </div>
-              <div class="product-footer">
-                <span class="seller-info">{{ product.sellerName || product.categoryName || '校园卖家' }}</span>
-                <span class="like-count" v-if="product.likeCount">
-                  <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
-                    <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
-                  </svg>
-                  {{ product.likeCount }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="!loading && hasMore && products.length > 0" class="load-more">
-          <button @click="loadMore" :disabled="loadingMore" class="load-more-btn">
-            {{ loadingMore ? '加载中...' : '上滑加载更多' }}
-          </button>
-        </div>
-
-        <div v-if="!hasMore && products.length > 0" class="no-more">
-          <span class="no-more-line"></span>
-          <span class="no-more-text">已经到底啦~</span>
-          <span class="no-more-line"></span>
-        </div>
-      </section>
+      <div v-if="!hasMore && feedItems.length > 0" class="no-more">
+        <span class="no-more-line"></span>
+        <span class="no-more-text">已经到底啦~</span>
+        <span class="no-more-line"></span>
+      </div>
     </main>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { productApi, feedApi } from '../services/api'
+import { useAuthStore } from '../store/auth'
+import { feedApi, categoryApi } from '../services/api'
 import PostCard from '../components/PostCard.vue'
 
 const router = useRouter()
+const authStore = useAuthStore()
 
-const products = ref([])
+const mainTabs = [
+  { key: 'discover', label: '发现' },
+  { key: 'following', label: '关注' },
+  { key: 'campus', label: '校区' }
+]
+
+const activeTab = ref('discover')
+const activeCircle = ref(null)
+const searchKeyword = ref('')
+
+const feedItems = ref([])
 const loading = ref(true)
 const loadingMore = ref(false)
 const hasMore = ref(true)
 const error = ref(null)
-
 const currentPage = ref(1)
-const pageSize = 10
+const pageSize = 12
 
-const searchKeyword = ref('')
+const circles = ref([])
 
-const feedTab = ref('shop')
-const feedItems = ref([])
-const feedLoading = ref(false)
-const feedError = ref(null)
+const isAuthenticated = computed(() => authStore.isAuthenticated.value)
 
-const quickCategories = ref([
-  { id: 1, name: '数码电子', icon: '📱', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
-  { id: 2, name: '书籍教材', icon: '📚', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
-  { id: 3, name: '生活日用', icon: '🏠', color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
-  { id: 4, name: '服饰鞋包', icon: '👕', color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' },
-  { id: 5, name: '美妆护肤', icon: '💄', color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' },
-  { id: 6, name: '运动户外', icon: '⚽', color: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)' },
-  { id: 7, name: '文具手办', icon: '✏️', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)' },
-  { id: 8, name: '其他', icon: '📦', color: 'linear-gradient(135deg, #d299c2 0%, #fef9d7 100%)' }
-])
+const showLoginGuide = computed(() => {
+  return activeTab.value === 'following' && !isAuthenticated.value && !loading.value
+})
 
-const categoryIcons = { 1: '📱', 2: '📚', 3: '🏠', 4: '👕', 5: '💄', 6: '⚽', 7: '✏️', 8: '📦' }
+const emptyIcon = computed(() => {
+  const icons = { discover: '📭', following: '👥', campus: '🏫' }
+  return icons[activeTab.value] || '📭'
+})
 
-onMounted(async () => {
-  await loadProducts()
+const emptyText = computed(() => {
+  const texts = { discover: '暂无内容', following: '暂无关注内容', campus: '暂无校区内容' }
+  return texts[activeTab.value] || '暂无内容'
+})
+
+const emptySubText = computed(() => {
+  const texts = { discover: '快去发布第一条内容吧！', following: '关注更多用户，获取他们的最新动态', campus: '设置你的校区，发现身边的同学' }
+  return texts[activeTab.value] || ''
+})
+
+onMounted(() => {
+  loadCircles()
+  loadFeed()
   window.addEventListener('scroll', handleScroll)
 })
 
@@ -238,7 +183,23 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
 })
 
-async function loadProducts(isLoadMore = false) {
+async function loadCircles() {
+  try {
+    const res = await categoryApi.getCategories({ size: 20 })
+    if (res.code === 200) {
+      const data = res.data || {}
+      circles.value = (data.list || data.records || data.items || []).map(c => ({
+        id: c.id,
+        name: c.name,
+        icon: c.icon || ''
+      }))
+    }
+  } catch (e) {
+    circles.value = []
+  }
+}
+
+async function loadFeed(isLoadMore = false) {
   try {
     error.value = null
     if (isLoadMore) {
@@ -250,31 +211,34 @@ async function loadProducts(isLoadMore = false) {
     const params = {
       page: currentPage.value,
       size: pageSize,
-      status: 1
+      type: activeTab.value
     }
 
-    const response = await productApi.getProducts(params)
+    if (activeCircle.value) {
+      params.circleId = activeCircle.value
+    }
 
-    if (response.code === 200) {
-      const data = response.data || {}
-      const newProducts = data.list || data.records || data.items || []
+    const res = await feedApi.getFeed(params)
+
+    if (res.code === 200) {
+      const data = res.data || {}
+      const newItems = data.list || data.records || data.items || []
 
       if (isLoadMore) {
-        products.value = [...products.value, ...newProducts]
+        feedItems.value = [...feedItems.value, ...newItems]
       } else {
-        products.value = newProducts
+        feedItems.value = newItems
       }
 
       const total = data.total || 0
-      hasMore.value = products.value.length < total
+      hasMore.value = feedItems.value.length < total
     } else {
-      throw new Error(response.message || '加载商品失败')
+      throw new Error(res.message || '加载内容失败')
     }
   } catch (err) {
-    console.error('加载商品失败:', err)
-    error.value = err.message || '加载失败，请稍后重试'
-    if (isLoadMore) {
-      currentPage.value--
+    console.error('加载Feed失败:', err)
+    if (!isLoadMore) {
+      error.value = err.message || '加载失败，请稍后重试'
     }
   } finally {
     loading.value = false
@@ -282,25 +246,43 @@ async function loadProducts(isLoadMore = false) {
   }
 }
 
-function retryLoad() {
-  currentPage.value = 1
-  loadProducts()
-}
-
-function loadMore() {
-  if (!hasMore.value || loadingMore.value) return
-  currentPage.value++
-  loadProducts(true)
-}
-
 function handleScroll() {
-  if (loadingMore.value || !hasMore.value) return
+  if (loadingMore.value || !hasMore.value || loading.value) return
   const scrollTop = document.documentElement.scrollTop || document.body.scrollTop
   const scrollHeight = document.documentElement.scrollHeight
   const clientHeight = document.documentElement.clientHeight
-  if (scrollTop + clientHeight >= scrollHeight - 100) {
-    loadMore()
+  if (scrollTop + clientHeight >= scrollHeight - 200) {
+    loadMoreItems()
   }
+}
+
+function loadMoreItems() {
+  if (!hasMore.value || loadingMore.value) return
+  currentPage.value++
+  loadFeed(true)
+}
+
+function switchMainTab(tab) {
+  if (activeTab.value === tab) return
+  activeTab.value = tab
+  activeCircle.value = null
+  currentPage.value = 1
+  hasMore.value = true
+  feedItems.value = []
+  error.value = null
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+  loadFeed()
+}
+
+function switchCircle(circleId) {
+  if (activeCircle.value === circleId) return
+  activeCircle.value = circleId
+  currentPage.value = 1
+  hasMore.value = true
+  feedItems.value = []
+  error.value = null
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+  loadFeed()
 }
 
 function handleSearch() {
@@ -308,63 +290,16 @@ function handleSearch() {
   router.push({ path: '/products', query: { keyword: searchKeyword.value.trim() } })
 }
 
-function clearSearch() {
-  searchKeyword.value = ''
-}
-
-function goToDetail(productId) {
-  router.push(`/products/${productId}`)
-}
-
 function goToPost(postId) {
   router.push(`/community/posts/${postId}`)
 }
 
-async function loadFeed() {
-  feedLoading.value = true
-  feedError.value = null
-  try {
-    const res = await feedApi.getFeed({ page: 1, size: 12 })
-    if (res.code === 200) {
-      feedItems.value = res.data.list || []
-    }
-  } catch (e) {
-    feedError.value = '加载社区内容失败'
-  } finally {
-    feedLoading.value = false
-  }
+function goToProduct(productId) {
+  router.push(`/products/${productId}`)
 }
 
-watch(feedTab, (newTab) => {
-  if (newTab === 'feed' && feedItems.value.length === 0) {
-    loadFeed()
-  }
-})
-
-function goToCategory(category) {
-  router.push({ path: '/products', query: { categoryId: category.id } })
-}
-
-function getProductImage(product) {
-  if (product.coverImage) return product.coverImage
-  if (product.imageUrls) {
-    try {
-      const urls = typeof product.imageUrls === 'string' ? JSON.parse(product.imageUrls) : product.imageUrls
-      if (Array.isArray(urls) && urls.length > 0) return urls[0]
-    } catch (e) { /* ignore */ }
-  }
-  if (product.imageUrl) return product.imageUrl
-  return null
-}
-
-function onImageError(e) {
-  e.target.style.display = 'none'
-  const placeholder = e.target.nextElementSibling
-  if (placeholder) placeholder.style.display = 'flex'
-}
-
-function getCategoryIcon(categoryId) {
-  return categoryIcons[categoryId] || '📦'
+function goToLogin() {
+  router.push({ path: '/login', query: { redirect: '/' } })
 }
 
 function formatPrice(price) {
@@ -382,33 +317,72 @@ function formatPrice(price) {
   background-color: #f5f5f5;
 }
 
-.search-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background-color: #fff;
-  padding: 12px 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-.search-bar {
+.main-nav-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  background-color: #f5f5f5;
-  border-radius: 20px;
-  padding: 10px 16px;
-  transition: all 0.25s ease;
+  position: sticky;
+  top: 48px;
+  z-index: 99;
+  background: #fff;
+  padding: 0 12px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.search-bar:focus-within {
-  background-color: #fff;
-  box-shadow: 0 0 0 2px #FF6A00;
+.nav-tabs {
+  display: flex;
+  flex: 1;
+}
+
+.nav-tab {
+  flex: 1;
+  padding: 12px 0;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  border: none;
+  background: none;
+  position: relative;
+  transition: color 0.25s ease;
+}
+
+.nav-tab.active {
+  color: #FF6A00;
+  font-weight: 700;
+}
+
+.nav-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 28px;
+  height: 3px;
+  background: #FF6A00;
+  border-radius: 2px;
+}
+
+.search-box {
+  width: 120px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f5f5f5;
+  border-radius: 16px;
+  padding: 6px 12px;
+  margin-left: 8px;
+  transition: width 0.3s ease, box-shadow 0.2s ease;
+}
+
+.search-box:focus-within {
+  width: 150px;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(255, 106, 0, 0.3);
 }
 
 .search-icon {
-  width: 20px;
-  height: 20px;
   color: #999;
   flex-shrink: 0;
 }
@@ -417,342 +391,82 @@ function formatPrice(price) {
   flex: 1;
   border: none;
   background: none;
-  font-size: 15px;
+  font-size: 13px;
   color: #333;
   outline: none;
+  width: 0;
+  min-width: 0;
 }
 
 .search-input::placeholder {
   color: #bbb;
 }
 
-.clear-btn {
-  width: 20px;
-  height: 20px;
-  color: #ccc;
+.circle-sub-nav {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #fff;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.circle-sub-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.circle-tag {
   flex-shrink: 0;
-  background: none;
+  padding: 6px 16px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #f5f5f5;
+  color: #666;
   border: none;
   cursor: pointer;
+  white-space: nowrap;
+  scroll-snap-align: start;
+  transition: all 0.2s ease;
 }
 
-.clear-btn svg {
-  width: 16px;
-  height: 16px;
+.circle-tag.active {
+  background: linear-gradient(135deg, #FF6A00, #FF8533);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(255, 106, 0, 0.25);
 }
 
-.banner-section {
-  margin: 12px 16px 0;
-  border-radius: 12px;
-  overflow: hidden;
-  background: linear-gradient(135deg, #FF6A00 0%, #FF8533 50%, #FFB347 100%);
-  aspect-ratio: 2 / 1;
-}
-
-.banner-slide {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-
-.banner-content {
-  text-align: left;
-  color: white;
-  max-width: 280px;
-}
-
-.banner-title {
-  font-size: 24px;
-  font-weight: 700;
-  margin-bottom: 8px;
-  line-height: 1.3;
-}
-
-.banner-subtitle {
-  font-size: 14px;
-  opacity: 0.9;
-  margin-bottom: 16px;
-}
-
-.banner-btn {
-  background-color: white;
-  color: #FF6A00;
-  padding: 10px 24px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-}
-
-.banner-btn:active {
+.circle-tag:active {
   transform: scale(0.95);
 }
 
-.quick-categories {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px 8px;
-  padding: 20px 16px;
-  background-color: #fff;
-  margin-top: 12px;
-}
-
-.category-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
-
-.category-item:active {
-  transform: scale(0.92);
-}
-
-.category-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.category-name {
-  font-size: 12px;
-  color: #666;
-  font-weight: 500;
-}
-
-.products-section {
-  padding: 16px;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.section-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #333;
-}
-
-.view-more {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 14px;
-  color: #999;
-  text-decoration: none;
-}
-
-.view-more svg {
-  width: 16px;
-  height: 16px;
-}
-
-.waterfall-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-}
-
-.product-card {
-  background-color: #fff;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  cursor: pointer;
-}
-
-.product-card:active {
-  transform: scale(0.97);
-}
-
-.product-image-wrapper {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  overflow: hidden;
-  background-color: #f5f5f5;
-}
-
-.product-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.product-image-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-}
-
-.placeholder-icon {
-  font-size: 40px;
-  opacity: 0.5;
-}
-
-.condition-tag {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  padding: 4px 8px;
-  background-color: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(4px);
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 500;
-  color: #666;
-}
-
-.product-info {
-  padding: 12px;
-}
-
-.product-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: #333;
-  line-height: 1.4;
-  margin: 0 0 8px;
-  min-height: 40px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.product-meta {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  margin-bottom: 8px;
-}
-
-.product-price {
-  font-size: 18px;
-  font-weight: 700;
-  color: #FF4D4F;
-}
-
-.product-price small {
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.original-price {
-  font-size: 12px;
-  color: #bbb;
-  text-decoration: line-through;
-}
-
-.product-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.seller-info {
-  font-size: 12px;
-  color: #999;
-  max-width: 60%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.like-count {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 12px;
-  color: #999;
+.feed-content {
+  padding: 12px 16px;
 }
 
 .loading-state {
-  padding: 16px 0;
-}
-
-.skeleton-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .skeleton-card {
-  background-color: #fff;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.skeleton-image {
   width: 100%;
-  aspect-ratio: 1 / 1;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  height: 120px;
+  background: #fff;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
-}
-
-.skeleton-info {
-  padding: 12px;
-}
-
-.skeleton-text {
-  height: 40px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: 4px;
-  margin-bottom: 10px;
-}
-
-.skeleton-price {
-  height: 22px;
-  width: 80px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: 4px;
 }
 
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
-}
-
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-}
-
-.empty-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
-  opacity: 0.6;
-}
-
-.empty-text {
-  font-size: 15px;
-  color: #999;
-  margin-bottom: 24px;
 }
 
 .error-state {
@@ -770,10 +484,6 @@ function formatPrice(price) {
   font-size: 15px;
   color: #666;
   margin-bottom: 24px;
-  line-height: 1.5;
-  max-width: 280px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .retry-btn {
@@ -787,73 +497,76 @@ function formatPrice(price) {
   cursor: pointer;
 }
 
-.load-more {
+.empty-state {
   text-align: center;
-  padding: 24px 0 16px;
+  padding: 60px 20px;
 }
 
-.load-more-btn {
-  background-color: #f5f5f5;
-  color: #999;
-  padding: 10px 32px;
-  border-radius: 20px;
-  font-size: 14px;
-  border: none;
-  cursor: pointer;
-}
-
-.load-more-btn:disabled {
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
   opacity: 0.6;
 }
 
-.no-more {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 24px 0 32px;
-  color: #ccc;
-  font-size: 13px;
-}
-
-.no-more-line {
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(to right, transparent, #e0e0e0, transparent);
-}
-
-/* Feed Tab 切换 */
-.feed-tabs {
-  display: flex;
-  gap: 0;
-  padding: 4px 16px 0;
-  background: #fff;
-}
-
-.feed-tabs button {
-  flex: 1;
-  padding: 10px 0;
-  border: none;
-  background: #f5f5f5;
-  border-radius: 12px 12px 0 0;
-  font-size: 14px;
-  font-weight: 500;
+.empty-text {
+  font-size: 15px;
   color: #666;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  margin: 0 2px;
+  margin-bottom: 8px;
 }
 
-.feed-tabs button.active {
+.empty-subtext {
+  font-size: 13px;
+  color: #999;
+}
+
+.login-guide {
+  display: flex;
+  justify-content: center;
+  padding: 40px 16px;
+}
+
+.login-guide-card {
   background: #fff;
-  color: #FF6A00;
-  font-weight: 700;
-  border-bottom: 3px solid #FF6A00;
+  border-radius: 16px;
+  padding: 32px 24px;
+  text-align: center;
+  width: 100%;
+  max-width: 320px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
-/* 社区视图 */
-.community-feed {
-  padding: 0 16px 16px;
+.login-guide-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.login-guide-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.login-guide-desc {
+  font-size: 14px;
+  color: #999;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.login-guide-btn {
+  background: linear-gradient(135deg, #FF6A00, #FF8533);
+  color: #fff;
+  padding: 12px 48px;
+  border-radius: 24px;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+.login-guide-btn:active {
+  transform: scale(0.96);
 }
 
 .feed-list {
@@ -869,15 +582,31 @@ function formatPrice(price) {
   border-radius: 12px;
   padding: 12px;
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.feed-product-card:active {
+  transform: scale(0.98);
 }
 
 .feed-product-image {
-  width: 72px;
-  height: 72px;
+  width: 84px;
+  height: 84px;
   border-radius: 8px;
   object-fit: cover;
-  background: #eee;
+  background: #f5f5f5;
+  flex-shrink: 0;
+}
+
+.feed-product-placeholder {
+  width: 84px;
+  height: 84px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  color: #ccc;
   flex-shrink: 0;
 }
 
@@ -886,9 +615,10 @@ function formatPrice(price) {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  min-width: 0;
 }
 
-.feed-product-info h4 {
+.feed-product-title {
   font-size: 14px;
   font-weight: 600;
   color: #333;
@@ -896,6 +626,13 @@ function formatPrice(price) {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  margin: 0;
+}
+
+.feed-product-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
 }
 
 .feed-product-price {
@@ -904,15 +641,93 @@ function formatPrice(price) {
   color: #FF6A00;
 }
 
-.create-post-btn {
-  display: inline-block;
-  margin-top: 12px;
-  padding: 8px 24px;
-  background: linear-gradient(135deg, #FF6A00, #FF8533);
+.feed-product-original {
+  font-size: 12px;
+  color: #bbb;
+  text-decoration: line-through;
+}
+
+.feed-product-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.feed-product-seller {
+  font-size: 12px;
+  color: #999;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60%;
+}
+
+.feed-product-circle {
+  font-size: 11px;
   color: #fff;
+  background: linear-gradient(135deg, #FF6A00, #FF8533);
+  padding: 2px 8px;
+  border-radius: 8px;
+}
+
+.load-more {
+  text-align: center;
+  padding: 16px 0 8px;
+}
+
+.load-more-btn {
+  background: #f5f5f5;
+  color: #999;
+  padding: 8px 32px;
   border-radius: 20px;
-  text-decoration: none;
   font-size: 14px;
-  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+.load-more-btn:disabled {
+  opacity: 0.6;
+}
+
+.no-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 0 32px;
+  color: #ccc;
+  font-size: 13px;
+}
+
+.no-more-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, #e0e0e0, transparent);
+}
+
+@media (min-width: 769px) {
+  .home-page {
+    max-width: 750px;
+    margin: 0 auto;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
+    background: #fff;
+  }
+
+  .feed-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .feed-product-card {
+    flex-direction: column;
+  }
+
+  .feed-product-image,
+  .feed-product-placeholder {
+    width: 100%;
+    height: 160px;
+    border-radius: 8px 8px 0 0;
+  }
 }
 </style>

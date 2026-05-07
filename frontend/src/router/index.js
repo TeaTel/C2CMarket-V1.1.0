@@ -175,6 +175,19 @@ const routes = [
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('../views/NotFound.vue')
+  },
+  // 活动页面
+  {
+    path: '/activities',
+    name: 'Activities',
+    component: () => import('../views/Activities.vue'),
+    meta: { title: '活动', showTabBar: true }
+  },
+  {
+    path: '/activities/:id',
+    name: 'ActivityDetail',
+    component: () => import('../views/Activities.vue'),
+    meta: { title: '活动详情' }
   }
 ]
 
@@ -192,7 +205,7 @@ const router = createRouter({
 
 // 白名单路径（无需登录即可访问）
 const publicPaths = ['/', '/login', '/register', '/forgot-password', '/db-test', '/products', '/products/:id', '/categories',
-  '/community', '/community/posts/:id', '/boards', '/boards/:id', '/users/:id']
+  '/community', '/community/posts/:id', '/boards', '/boards/:id', '/users/:id', '/activities', '/activities/:id']
 
 // 全局前置守卫
 router.beforeEach((to, from, next) => {

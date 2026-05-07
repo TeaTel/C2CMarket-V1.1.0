@@ -69,4 +69,10 @@ public interface UserMapper {
      */
     @Update("UPDATE users SET status = #{status}, updated_at = CURRENT_TIMESTAMP WHERE id = #{id}")
     int updateStatus(@Param("id") Long id, @Param("status") Integer status);
+
+    /**
+     * 根据学校名称查询用户ID列表
+     */
+    @Select("SELECT id FROM users WHERE school = #{school} AND status = 1")
+    java.util.List<Long> selectIdsBySchool(String school);
 }

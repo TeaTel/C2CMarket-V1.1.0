@@ -530,6 +530,14 @@ export const feedApi = {
   getFeed(params) { return api.get('/v2/feed', { params }) }
 }
 
+// ==================== 活动 API ====================
+export const activityApi = {
+  getActivities(params) { return api.get('/v2/activities', { params }) },
+  getActivityDetail(id) { return api.get(`/v2/activities/${id}`) },
+  joinActivity(id) { return api.post(`/v2/activities/${id}/join`) },
+  cancelJoin(id) { return api.delete(`/v2/activities/${id}/join`) }
+}
+
 // ==================== 商品故事 API ====================
 export const storyApi = {
   getStoryFeed(params) { return api.get('/v2/stories/feed', { params }) },

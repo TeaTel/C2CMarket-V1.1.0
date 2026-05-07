@@ -1,6 +1,7 @@
 package com.campus.backend.dto;
 
 import lombok.Data;
+import java.util.List;
 
 @Data
 public class PostQueryDTO {
@@ -12,6 +13,8 @@ public class PostQueryDTO {
     private String keyword;
 
     private Long userId;
+
+    private List<Long> userIds;
 
     private String status;
 
