@@ -1,7 +1,19 @@
 <template>
   <div id="app" class="app-container">
+    <!-- 左侧抽屉菜单触发按钮 -->
+    <button v-if="showAppHeader" class="side-menu-trigger" @click="showSideMenu = true" :class="{ pulsing: !hasSeenMenu }">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+
     <!-- 全局Header：仅在主页/列表等主Tab页面显示，详情页自动隐藏 -->
     <AppHeader v-if="showAppHeader" />
+
+    <!-- 左侧抽屉菜单 -->
+    <SideMenu :visible="showSideMenu" @close="handleMenuClose" />
 
     <!-- 主内容区域（带底部TabBar间距） -->
     <main class="main-content" :class="{ 'with-tabbar': showTabBar, 'no-header': !showAppHeader }">
@@ -18,15 +30,24 @@
 </template>
 
 <script setup>
-import { computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from './store/auth'
 import { wsManager } from './services/api'
 import TabBar from './components/NavBar.vue'
 import AppHeader from './components/AppHeader.vue'
+import SideMenu from './components/SideMenu.vue'
 
 const route = useRoute()
 const authStore = useAuthStore()
+
+const showSideMenu = ref(false)
+const hasSeenMenu = ref(false)
+
+function handleMenuClose() {
+  showSideMenu.value = false
+  hasSeenMenu.value = true
+}
 
 // 根据路由meta判断是否显示TabBar
 const showTabBar = computed(() => {
@@ -85,6 +106,41 @@ onMounted(() => {
 
 <style>
 @import './assets/css/design-system.css';
+
+/* 左侧抽屉菜单触发按钮 */
+.side-menu-trigger {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 1001;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(8px);
+  border-radius: 50%;
+  color: #333;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.side-menu-trigger:active {
+  transform: scale(0.92);
+  background: #FFF7E6;
+}
+
+.side-menu-trigger.pulsing {
+  animation: menu-pulse 2s ease-in-out infinite;
+}
+
+@keyframes menu-pulse {
+  0%, 100% { box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+  50% { box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 6px rgba(255,106,0,0.15); }
+}
 
 /* 全局App样式 */
 .app-container {

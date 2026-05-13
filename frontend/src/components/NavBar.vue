@@ -168,12 +168,6 @@ const rightTabs = [
     label: '活动',
     icon: 'activity',
     badge: false
-  },
-  {
-    path: '/profile',
-    label: '我',
-    icon: 'profile',
-    badge: false
   }
 ]
 
