@@ -42,6 +42,12 @@ public class PostVO {
 
     private LocalDateTime updatedAt;
 
+    private LocalDateTime startTime;
+
+    private LocalDateTime endTime;
+
+    private String location;
+
     public String getPostTypeText() {
         if (postType == null) return "讨论";
         return switch (postType) {

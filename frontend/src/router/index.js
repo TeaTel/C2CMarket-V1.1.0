@@ -185,9 +185,9 @@ const routes = [
   {
     path: '/activities/:id',
     name: 'ActivityDetail',
-    component: () => import('../views/Activities.vue'),
+    component: () => import('../views/ActivityDetail.vue'),
     meta: { title: '活动详情' }
-  }
+  },
 ]
 
 const router = createRouter({

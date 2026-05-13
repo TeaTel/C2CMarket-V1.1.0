@@ -35,4 +35,10 @@ public class Post {
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    private LocalDateTime startTime;
+
+    private LocalDateTime endTime;
+
+    private String location;
 }
