@@ -64,7 +64,7 @@
 
           <!-- 商品预览卡片（如果有） -->
           <div v-if="conv.productInfo" class="product-preview">
-            <img :src="conv.productInfo.imageUrl" alt="" class="product-thumb" />
+            <img :src="conv.productInfo.coverImage || conv.productInfo.imageUrl" alt="" class="product-thumb" />
             <div class="product-info-mini">
               <p class="product-name-mini">{{ conv.productInfo.name }}</p>
               <span class="product-price-mini">¥{{ conv.productInfo.price }}</span>
@@ -103,12 +103,22 @@ async function loadConversations() {
     const response = await messageApi.getContacts()
 
     if (response.code === 200) {
-      const data = response.data || []
+      const rawData = response.data || []
 
-      // 转换数据格式并添加模拟数据用于演示
-      conversations.value = data.length > 0 ? data : generateMockConversations()
+      conversations.value = (Array.isArray(rawData) ? rawData : []).map(conv => ({
+        userId: conv.otherUser?.id || conv.otherUserId || conv.userId,
+        username: conv.otherUser?.nickname || conv.otherUser?.username || conv.username || '未知用户',
+        avatar: conv.otherUser?.avatar || conv.avatar || null,
+        lastMessage: conv.lastMessage || '',
+        lastMessageTime: conv.lastMessageAt || conv.lastMessageTime || new Date().toISOString(),
+        unreadCount: conv.unreadCount || 0,
+        isOnline: conv.otherUser?.isOnline || false,
+        productInfo: conv.productInfo || null,
+        id: conv.id,
+        otherUserId: conv.otherUser?.id || conv.otherUserId || conv.userId,
+        productId: conv.productInfo?.id || conv.productId || null
+      })).filter(c => c.userId)
 
-      // 计算总未读数
       unreadTotal.value = conversations.value.reduce(
         (total, conv) => total + (conv.unreadCount || 0),
         0
@@ -116,8 +126,7 @@ async function loadConversations() {
     }
   } catch (error) {
     console.error('加载会话列表失败:', error)
-    // 使用模拟数据作为fallback
-    conversations.value = generateMockConversations()
+    conversations.value = []
   } finally {
     loading.value = false
   }
@@ -125,11 +134,11 @@ async function loadConversations() {
 
 // 打开聊天室
 function openChat(conv) {
+  const uid = conv.userId || conv.otherUserId
+  if (!uid) return
   router.push({
-    path: `/chat/${conv.userId}`,
-    query: {
-      productId: conv.productId || undefined
-    }
+    path: `/chat/${uid}`,
+    query: { productId: conv.productId || undefined }
   })
 }
 
@@ -160,71 +169,6 @@ function formatTime(timestamp) {
   }
 }
 
-// 生成模拟数据（用于演示）
-function generateMockConversations() {
-  return [
-    {
-      userId: 1001,
-      username: '数码达人小王',
-      avatar: null,
-      lastMessage: '这个iPhone成色很新，还在保，价格可以再商量~',
-      lastMessageTime: new Date(Date.now() - 300000).toISOString(),
-      unreadCount: 2,
-      isOnline: true,
-      productInfo: {
-        id: 1,
-        name: 'iPhone 13 Pro 256G 蓝色',
-        price: '4299',
-        imageUrl: 'https://via.placeholder.com/60x60/e8f5e9/999999?text=iPhone'
-      }
-    },
-    {
-      userId: 1002,
-      username: '书虫小李',
-      avatar: null,
-      lastMessage: '好的，那我们明天下午在图书馆门口见',
-      lastMessageTime: new Date(Date.now() - 3600000).toISOString(),
-      unreadCount: 0,
-      isOnline: false,
-      productInfo: null
-    },
-    {
-      userId: 1003,
-      username: '运动健将张三',
-      avatar: null,
-      lastMessage: '这双鞋穿过两次，基本全新，原价599入的',
-      lastMessageTime: new Date(Date.now() - 7200000).toISOString(),
-      unreadCount: 1,
-      isOnline: true,
-      productInfo: {
-        id: 5,
-        name: 'Nike Air Max 270 白色 42码',
-        price: '280',
-        imageUrl: 'https://via.placeholder.com/60x60/e3f2fd/999999?text=Shoes'
-      }
-    },
-    {
-      userId: 1004,
-      username: '美妆博主Luna',
-      avatar: null,
-      lastMessage: '这套护肤品是正品，有购买记录的',
-      lastMessageTime: new Date(Date.now() - 86400000).toISOString(),
-      unreadCount: 0,
-      isOnline: false,
-      productInfo: null
-    },
-    {
-      userId: 1005,
-      username: '宿舍神器店长',
-      avatar: null,
-      lastMessage: '亲，这款台灯已经卖出去啦，不过还有同款的',
-      lastMessageTime: new Date(Date.now() - 172800000).toISOString(),
-      unreadCount: 0,
-      isOnline: true,
-      productInfo: null
-    }
-  ]
-}
 </script>
 
 <style scoped>

@@ -131,7 +131,12 @@ onUnmounted(() => {
 })
 
 async function initChat() {
-  const otherUserId = parseInt(route.params.userId)
+  const rawId = route.params.userId
+  const otherUserId = Number(rawId)
+  if (!rawId || isNaN(otherUserId) || otherUserId <= 0) {
+    contactInfo.value = { username: '用户不存在' }
+    return
+  }
   await loadContactInfo(otherUserId)
   await findConversation(otherUserId)
   await loadProductInfo()
@@ -149,7 +154,7 @@ async function loadContactInfo(userId) {
       isOnline.value = true
     }
   } catch (e) {
-    contactInfo.value = { id: userId, username: '用户' + userId }
+    contactInfo.value = { id: userId, username: '未知用户' }
   }
 }
 
@@ -193,11 +198,13 @@ async function loadMessages() {
 async function sendMessage() {
   const content = newMessage.value.trim()
   if (!content || sending.value) return
+  const rawId = route.params.userId
+  const otherUserId = Number(rawId)
+  if (!rawId || isNaN(otherUserId) || otherUserId <= 0) return
   sending.value = true
   try {
-    const otherUserId = parseInt(route.params.userId)
     const payload = { receiverId: otherUserId, content }
-    if (route.query.productId) payload.productId = parseInt(route.query.productId)
+    if (route.query.productId) payload.productId = Number(route.query.productId) || undefined
 
     const res = await messageApi.sendMessage(payload)
     if (res.code === 200) {
@@ -221,7 +228,9 @@ async function sendMessage() {
 }
 
 function handleWsMessage(data) {
-  const otherUserId = parseInt(route.params.userId)
+  const rawId = route.params.userId
+  const otherUserId = Number(rawId)
+  if (!rawId || isNaN(otherUserId)) return
   if (Number(data.senderId) === currentUserId.value) return
   if (Number(data.senderId) !== otherUserId && Number(data.receiverId) !== currentUserId.value) return
   messages.value.push({
