@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS users (
     id              BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '用户ID',
     username        VARCHAR(50)  NOT NULL UNIQUE COMMENT '用户名',
     password_hash   VARCHAR(255) NOT NULL COMMENT '密码哈希(BCrypt)',
-    phone           VARCHAR(20)  NOT NULL UNIQUE COMMENT '手机号',
-    email           VARCHAR(100) NOT NULL UNIQUE COMMENT '邮箱',
+    phone           VARCHAR(20)  DEFAULT NULL COMMENT '手机号',
+    email           VARCHAR(100) DEFAULT NULL COMMENT '邮箱',
     nickname        VARCHAR(50)  DEFAULT NULL COMMENT '昵称',
     avatar          VARCHAR(500) DEFAULT NULL COMMENT '头像URL',
     gender          TINYINT(1)   DEFAULT NULL COMMENT '性别:0未知,1男,2女',
@@ -27,8 +27,6 @@ CREATE TABLE IF NOT EXISTS users (
     created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at      DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     INDEX idx_username (username),
-    INDEX idx_phone (phone),
-    INDEX idx_email (email),
     INDEX idx_school (school)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
@@ -100,7 +98,7 @@ CREATE TABLE IF NOT EXISTS chat_conversations (
     FOREIGN KEY (user1_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (user2_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
-    UNIQUE INDEX uk_user_pair (LEAST(user1_id, user2_id), GREATEST(user1_id, user2_id)),
+    UNIQUE INDEX uk_user_pair (user1_id, user2_id),
     INDEX idx_user1 (user1_id),
     INDEX idx_user2 (user2_id),
     INDEX idx_product (product_id),
@@ -160,7 +158,7 @@ CREATE TABLE IF NOT EXISTS orders (
 CREATE TABLE IF NOT EXISTS order_items (
     id              BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '订单项ID',
     order_id        BIGINT       NOT NULL COMMENT '所属订单ID',
-    product_id      BIGINT       NOT NULL COMMENT '商品ID',
+    product_id      BIGINT       DEFAULT NULL COMMENT '商品ID',
     product_name    VARCHAR(255) NOT NULL COMMENT '商品名称(快照)',
     product_image   VARCHAR(255) DEFAULT NULL COMMENT '商品图片(快照)',
     price           DECIMAL(10,2) NOT NULL COMMENT '下单时单价(快照)',

@@ -82,6 +82,24 @@ CREATE TABLE IF NOT EXISTS user_follows (
 -- 重新创建辅助存储过程（以防 v3 已将其删除）
 DROP PROCEDURE IF EXISTS add_column_if_not_exists_v4;
 
+-- -----------------------------------------------------------
+-- 6. 商品评论表
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS product_comments (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    product_id      BIGINT       NOT NULL COMMENT '所属商品ID',
+    user_id         BIGINT       NOT NULL COMMENT '评论者用户ID',
+    parent_id       BIGINT       DEFAULT NULL COMMENT '父评论ID（NULL为一级评论）',
+    content         TEXT         NOT NULL COMMENT '评论内容',
+    like_count      INT          DEFAULT 0 COMMENT '点赞次数',
+    status          VARCHAR(20)  DEFAULT 'PUBLISHED' COMMENT '状态：PUBLISHED/HIDDEN/DELETED',
+    created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '评论时间',
+    INDEX idx_product_id (product_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_parent_id (parent_id),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='商品评论表';
+
 DELIMITER //
 CREATE PROCEDURE add_column_if_not_exists_v4(
     IN tbl_name VARCHAR(128),
