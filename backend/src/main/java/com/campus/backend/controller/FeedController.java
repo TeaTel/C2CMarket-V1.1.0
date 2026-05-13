@@ -120,11 +120,15 @@ public class FeedController {
 
         Collections.shuffle(items);
 
+        int postTotal = postService.getPostCount(postQuery);
+        int productTotal = productService.getProductCount(productQuery);
+        int total = postTotal + productTotal;
+
         Map<String, Object> result = Map.of(
                 "list", items,
                 "page", page,
                 "size", size,
-                "total", items.size()
+                "total", total
         );
         return Result.success(result);
     }

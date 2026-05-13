@@ -118,6 +118,16 @@ INSERT IGNORE INTO products (id, name, description, price, original_price, categ
  'https://picsum.photos/400/300?random=1101', 2, 334, 42, '北大图书馆', 1);
 
 -- -----------------------------------------------------------
+-- 帖子数据（社区内容示例）
+-- -----------------------------------------------------------
+INSERT IGNORE INTO posts (user_id, title, content, post_type, board_id, view_count, like_count, comment_count, is_pinned, is_essence, status, created_at) VALUES
+(1, '终于收到心心念念的Kindle了！', '今天在咱们平台淘到一个几乎全新的Kindle Paperwhite 5，卖家同学人超好，还在图书馆门口面交的。试用了一下，墨水屏确实舒服，看PDF论文也很方便。强烈推荐给还在犹豫要不要买电子书阅读器的同学~', 'SHOWCASE', NULL, 256, 42, 18, 0, 1, 'PUBLISHED', NOW() - INTERVAL 1 DAY),
+(2, '求助：数据结构课设选什么题目比较好？', '大二计科专业，这学期选了大大的数据结构课。课设要求用C++实现一个完整的小系统，目前考虑的有：学生成绩管理系统、图书借阅系统、校园导航系统。有没有做过的学长学姐给点建议？哪个比较适合拿高分？', 'HELP', NULL, 523, 35, 42, 0, 0, 'PUBLISHED', NOW() - INTERVAL 2 DAY),
+(3, '【经验分享】考研408经验贴 复旦上岸', '准备了一年终于上岸了！分享一下各科目的备考资料和时间安排。数学用的是李永乐复习全书+660题+真题，专业课408四门建议先搞定数据结构和计组，这两门分值最高...', 'DISCUSSION', NULL, 1847, 256, 89, 1, 1, 'PUBLISHED', NOW() - INTERVAL 3 DAY),
+(1, '周末有一起去图书馆刷题的吗？', '最近在刷LeetCode，一个人刷太枯燥了。找几个小伙伴周末一起去图书馆组团刷题，互相讨论下解题思路。地点：清华李文正馆。有意向的同学评论区留言~', 'ACTIVITY', NULL, 312, 28, 35, 0, 0, 'PUBLISHED', NOW() - INTERVAL 12 HOUR),
+(2, '二手平台交易经验分享：如何避免踩坑', '在咱们平台买卖了不少东西，总结几点经验给新来的同学：1. 尽量面交，当面验货；2. 电子产品一定要看电池健康度/使用时长；3. 价格可以参考闲鱼和转转；4. 记得用平台聊天功能留痕。大家有什么经验也欢迎补充~', 'DISCUSSION', NULL, 678, 89, 23, 0, 0, 'PUBLISHED', NOW() - INTERVAL 6 HOUR);
+
+-- -----------------------------------------------------------
 -- 收藏数据
 -- -----------------------------------------------------------
 INSERT IGNORE INTO favorites (user_id, product_id, created_at) VALUES
