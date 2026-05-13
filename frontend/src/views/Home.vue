@@ -51,7 +51,7 @@
           v-for="item in feedItems.filter(i => i.itemType === 'POST')"
           :key="'post-' + item.id"
           :post="item"
-          @click="goToPost(item.id)"
+          @click="goToPost(item)"
         />
         <ProductCard
           v-for="item in feedItems.filter(i => i.itemType === 'PRODUCT')"
@@ -235,8 +235,12 @@ function switchCircle(circleId) {
   loadFeed()
 }
 
-function goToPost(postId) {
-  router.push(`/community/posts/${postId}`)
+function goToPost(item) {
+  if (item.postType === 'ACTIVITY') {
+    router.push(`/activities/${item.id}`)
+  } else {
+    router.push(`/community/posts/${item.id}`)
+  }
 }
 
 function goToProduct(productId) {

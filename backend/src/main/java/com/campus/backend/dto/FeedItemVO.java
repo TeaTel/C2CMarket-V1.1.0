@@ -51,4 +51,6 @@ public class FeedItemVO {
     private String location;
 
     private LocalDateTime createdAt;
+
+    private LocalDateTime startTime;
 }

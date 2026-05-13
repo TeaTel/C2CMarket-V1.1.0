@@ -88,7 +88,9 @@ public class FeedController {
             item.setBoardId(post.getBoardId());
             item.setBoardName(post.getBoardName());
             item.setPostType(post.getPostType());
+            item.setLocation(post.getLocation());
             item.setCreatedAt(post.getCreatedAt());
+            item.setStartTime(post.getStartTime());
             items.add(item);
         }
 

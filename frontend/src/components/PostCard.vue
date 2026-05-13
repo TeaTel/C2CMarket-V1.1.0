@@ -18,6 +18,7 @@
           <polyline points="10 9 9 9 8 9"/>
         </svg>
       </div>
+      <span v-if="post.postType === 'ACTIVITY'" class="activity-badge">活动</span>
     </div>
 
     <h3 class="card-title">{{ post.title }}</h3>
@@ -93,6 +94,21 @@ function goToUser() {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  position: relative;
+}
+
+.activity-badge {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  padding: 2px 8px;
+  background: linear-gradient(135deg, #FF6A00, #FF8533);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  box-shadow: 0 1px 4px rgba(255,106,0,0.35);
 }
 
 .cover-image {
