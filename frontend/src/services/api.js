@@ -143,6 +143,10 @@ export const userApi = {
     return api.get('/v2/users/info')
   },
 
+  getUserPublic(userId) {
+    return api.get(`/v2/users/${userId}`)
+  },
+
   updateProfile(data) {
     return api.put('/v2/users/profile', data)
   },

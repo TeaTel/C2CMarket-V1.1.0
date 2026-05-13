@@ -54,6 +54,12 @@ public class UserApi {
         return Result.success(userService.getUserInfo(SecurityUtils.getCurrentUserId()));
     }
 
+    @GetMapping("/{id}")
+    @Operation(summary = "获取指定用户公开信息")
+    public Result<UserVO> getUserPublic(@PathVariable Long id) {
+        return Result.success(userService.getUserInfo(id));
+    }
+
     @PutMapping("/profile")
     @Operation(summary = "更新个人资料")
     public Result<UserVO> updateProfile(@RequestBody User profileData) {

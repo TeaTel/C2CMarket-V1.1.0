@@ -23,7 +23,7 @@
     <h3 class="card-title">{{ post.title }}</h3>
 
     <div class="card-user-bar">
-      <div class="user-left">
+      <div class="user-left" @click.stop="goToUser">
         <img :src="post.userAvatar || defaultAvatar" class="user-avatar" loading="lazy" @error="onAvatarError" />
         <span class="user-name">{{ post.userName || '匿名用户' }}</span>
       </div>
@@ -41,6 +41,7 @@
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router'
 import LikeButton from './LikeButton.vue'
 
 const props = defineProps({
@@ -48,6 +49,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['click', 'like-toggled'])
+const router = useRouter()
 const defaultAvatar = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#eee"/><circle cx="20" cy="15" r="8" fill="#ccc"/><ellipse cx="20" cy="35" rx="12" ry="8" fill="#ccc"/></svg>')
 
 function onAvatarError(e) {
@@ -62,6 +64,10 @@ function onLikeToggled(isLiked, count) {
   props.post.isLiked = isLiked
   props.post.likeCount = count
   emit('like-toggled', { isLiked, count })
+}
+
+function goToUser() {
+  if (props.post.userId) router.push(`/users/${props.post.userId}`)
 }
 </script>
 
