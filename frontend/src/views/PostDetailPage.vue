@@ -7,8 +7,8 @@
             <polyline points="15,18 9,12 15,6"/>
           </svg>
         </button>
-        <img :src="post?.userAvatar || defaultAvatar" class="nav-avatar" @error="onAvatarError" />
-        <span class="nav-username">{{ post?.userName || '匿名用户' }}</span>
+        <img :src="post?.userAvatar || defaultAvatar" class="nav-avatar" @click="goToUser" @error="onAvatarError" />
+        <span class="nav-username" @click="goToUser">{{ post?.userName || '匿名用户' }}</span>
       </div>
       <div class="nav-right">
         <button v-if="auth.isAuthenticated && auth.currentUser?.id !== post?.userId" class="follow-btn" :class="{ followed: isFollowing }" @click="toggleFollow">
@@ -163,6 +163,7 @@ function handleShare() { navigator.clipboard?.writeText(window.location.href) }
 function previewImage(url) { window.open(url, '_blank') }
 function onAvatarError(e) { e.target.src = defaultAvatar }
 function onImageError(e) { e.target.style.display = 'none' }
+function goToUser() { if (post.value?.userId) router.push(`/users/${post.value.userId}`) }
 </script>
 
 <style scoped>
@@ -215,6 +216,7 @@ function onImageError(e) { e.target.style.display = 'none' }
   object-fit: cover;
   background: #eee;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .nav-username {
@@ -224,6 +226,7 @@ function onImageError(e) { e.target.style.display = 'none' }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .nav-right {

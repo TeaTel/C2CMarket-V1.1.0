@@ -7,8 +7,8 @@
             <polyline points="15,18 9,12 15,6"/>
           </svg>
         </button>
-        <img :src="product?.sellerAvatar || defaultAvatar" class="nav-avatar" @error="onAvatarError" />
-        <span class="nav-username">{{ product?.sellerName || '匿名卖家' }}</span>
+        <img :src="product?.sellerAvatar || defaultAvatar" class="nav-avatar" @click="goToSeller" @error="onAvatarError" />
+        <span class="nav-username" @click="goToSeller">{{ product?.sellerName || '匿名卖家' }}</span>
       </div>
       <div class="nav-right">
         <button v-if="auth.isAuthenticated && auth.currentUser?.id !== product?.sellerId" class="follow-btn" :class="{ followed: isFollowing }" @click="toggleFollow">
@@ -184,6 +184,7 @@ function formatPrice(price) {
 
 function onAvatarError(e) { e.target.src = defaultAvatar }
 function onImageError(e) { e.target.style.display = 'none' }
+function goToSeller() { if (product.value?.sellerId) router.push(`/users/${product.value.sellerId}`) }
 </script>
 
 <style scoped>
@@ -236,6 +237,7 @@ function onImageError(e) { e.target.style.display = 'none' }
   object-fit: cover;
   background: #eee;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .nav-username {
@@ -245,6 +247,7 @@ function onImageError(e) { e.target.style.display = 'none' }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .nav-right {
