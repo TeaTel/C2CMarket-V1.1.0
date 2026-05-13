@@ -49,7 +49,25 @@ public class LikeServiceImpl implements LikeService {
 
     @Override
     public int getLikeCount(String targetType, Long targetId) {
-        return userLikeMapper.countByTarget(targetType, targetId);
+        try {
+            return switch (targetType) {
+                case "POST" -> {
+                    var post = postMapper.selectById(targetId);
+                    yield post != null && post.getLikeCount() != null ? post.getLikeCount() : 0;
+                }
+                case "PRODUCT" -> {
+                    var product = productMapper.selectById(targetId);
+                    yield product != null && product.getLikeCount() != null ? product.getLikeCount() : 0;
+                }
+                case "COMMENT" -> {
+                    var comment = postCommentMapper.selectById(targetId);
+                    yield comment != null && comment.getLikeCount() != null ? comment.getLikeCount() : 0;
+                }
+                default -> 0;
+            };
+        } catch (Exception e) {
+            return userLikeMapper.countByTarget(targetType, targetId);
+        }
     }
 
     private void incrementTargetLikeCount(String targetType, Long targetId) {

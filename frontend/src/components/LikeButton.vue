@@ -1,5 +1,5 @@
 <template>
-  <button class="like-button" :class="{ liked: isLiked }" @click.stop="toggleLike">
+  <button class="like-button" :class="{ liked: isLiked, loading: loading }" @click.stop="toggleLike" :disabled="loading">
     <svg v-if="isLiked" viewBox="0 0 24 24" width="16" height="16" fill="#ff4757" stroke="#ff4757" stroke-width="2">
       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
     </svg>
@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { likeApi } from '../services/api'
 import { useAuthStore } from '../store/auth'
 
@@ -25,6 +25,7 @@ const props = defineProps({
 const emit = defineEmits(['toggled'])
 
 const auth = useAuthStore()
+const loading = ref(false)
 
 const formattedCount = computed(() => {
   const c = props.count || 0
@@ -34,9 +35,10 @@ const formattedCount = computed(() => {
 })
 
 async function toggleLike() {
-  if (!auth.isAuthenticated) {
+  if (!auth.isAuthenticated || loading.value) {
     return
   }
+  loading.value = true
   try {
     const res = await likeApi.toggleLike(props.targetType, props.targetId)
     if (res.code === 200) {
@@ -44,6 +46,8 @@ async function toggleLike() {
     }
   } catch (e) {
     // silently fail
+  } finally {
+    loading.value = false
   }
 }
 </script>
@@ -60,6 +64,10 @@ async function toggleLike() {
   font-size: 13px;
   color: #999;
   transition: color 0.2s, transform 0.2s;
+}
+.like-button.loading {
+  opacity: 0.6;
+  pointer-events: none;
 }
 .like-button:hover {
   transform: scale(1.1);
