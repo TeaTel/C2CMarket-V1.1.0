@@ -70,12 +70,6 @@ const allTabs = [
     label: '消息',
     icon: 'message',
     badge: true
-  },
-  {
-    path: '/activities',
-    label: '活动',
-    icon: 'activity',
-    badge: false
   }
 ]
 
