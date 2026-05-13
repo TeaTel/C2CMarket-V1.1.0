@@ -188,6 +188,11 @@
             class="form-input"
           />
         </div>
+
+        <div class="form-group">
+          <label class="form-label">标签（选填，最多 5 个）</label>
+          <TagInput v-model="tags" :preset-tags="tagPresets" :max-tags="5" placeholder="输入标签后按回车或逗号分隔..." />
+        </div>
       </section>
 
       <section class="notice-section">
@@ -227,6 +232,7 @@ import { ref, computed, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
 import { productApi, categoryApi } from '../services/api'
+import TagInput from '../components/TagInput.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -246,6 +252,13 @@ const imageList = ref([])
 const submitting = ref(false)
 const categories = ref([])
 const categoriesLoading = ref(false)
+const tags = ref([])
+
+const tagPresets = [
+  '数码', '书籍', '生活', '运动', '美食', '服饰', '美妆',
+  '家具', '电器', '文具', '乐器', '植物', '宠物用品',
+  '二手', '闲置', '全新', '九成新', '包邮', '可刀'
+]
 
 const errors = reactive({
   name: '',
@@ -445,7 +458,8 @@ async function handleSubmit() {
       deliveryMethod: formData.value.deliveryMethod,
       location: formData.value.location.trim() || null,
       imageUrls: imageUrls.length > 0 ? imageUrls : null,
-      coverImage: coverImage
+      coverImage: coverImage,
+      tags: tags.value.length > 0 ? tags.value : null
     }
 
     const response = await productApi.createProduct(productData)
