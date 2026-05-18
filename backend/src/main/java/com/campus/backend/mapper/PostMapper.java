@@ -11,8 +11,8 @@ public interface PostMapper {
     @Select("SELECT * FROM posts WHERE id = #{id}")
     Post selectById(Long id);
 
-    @Insert("INSERT INTO posts (user_id, title, content, post_type, board_id, group_buy_id, is_pinned, status) " +
-            "VALUES (#{userId}, #{title}, #{content}, #{postType}, #{boardId}, #{groupBuyId}, COALESCE(#{isPinned}, 0), 'PUBLISHED')")
+    @Insert("INSERT INTO posts (user_id, title, content, post_type, board_id, group_buy_id, is_pinned, status, tags) " +
+            "VALUES (#{userId}, #{title}, #{content}, #{postType}, #{boardId}, #{groupBuyId}, COALESCE(#{isPinned}, 0), 'PUBLISHED', #{tags})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(Post post);
 

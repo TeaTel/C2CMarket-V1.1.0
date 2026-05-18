@@ -3,12 +3,15 @@ package com.campus.backend.controller;
 import com.campus.backend.common.Result;
 import com.campus.backend.common.SecurityUtils;
 import com.campus.backend.dto.*;
+import com.campus.backend.entity.UserBehavior;
 import com.campus.backend.entity.UserFollow;
 import com.campus.backend.entity.User;
+import com.campus.backend.mapper.UserBehaviorMapper;
 import com.campus.backend.mapper.UserFollowMapper;
 import com.campus.backend.mapper.UserMapper;
 import com.campus.backend.service.PostService;
 import com.campus.backend.service.ProductService;
+import com.campus.backend.service.impl.RecommendationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -29,6 +32,36 @@ public class FeedController {
     private final ProductService productService;
     private final UserFollowMapper userFollowMapper;
     private final UserMapper userMapper;
+    private final UserBehaviorMapper userBehaviorMapper;
+    private final RecommendationService recommendationService;
+
+    @GetMapping("/recommend")
+    public Result<Map<String, Object>> getRecommendations(@RequestParam(defaultValue = "6") int limit) {
+        Long userId = SecurityUtils.getCurrentUserIdOrNull();
+        if (userId == null) {
+            return Result.success(Map.of("list", List.of(), "total", 0));
+        }
+        List<FeedItemVO> items = recommendationService.recommend(userId, limit);
+        return Result.success(Map.of("list", items, "total", items.size()));
+    }
+
+    @PostMapping("/behavior")
+    public Result<Void> recordBehavior(@RequestBody Map<String, Object> body) {
+        Long userId = SecurityUtils.getCurrentUserIdOrNull();
+        if (userId == null) return Result.success(null);
+
+        String targetType = (String) body.get("targetType");
+        Long targetId = body.get("targetId") != null ? Long.valueOf(body.get("targetId").toString()) : null;
+        if (targetType == null || targetId == null) return Result.success(null);
+
+        UserBehavior behavior = new UserBehavior();
+        behavior.setUserId(userId);
+        behavior.setBehaviorType("VIEW");
+        behavior.setTargetType(targetType);
+        behavior.setTargetId(targetId);
+        userBehaviorMapper.insert(behavior);
+        return Result.success(null);
+    }
 
     @GetMapping
     public Result<Map<String, Object>> getFeed(

@@ -48,6 +48,8 @@ public class PostVO {
 
     private String location;
 
+    private String tags;
+
     public String getPostTypeText() {
         if (postType == null) return "讨论";
         return switch (postType) {

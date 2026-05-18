@@ -59,6 +59,9 @@ public class ProductCreateDTO {
     /** 故事配图URL列表 */
     private List<String> storyImages;
 
+    /** 逗号分隔标签 */
+    private String tags;
+
     /** 销售模式：FIXED_PRICE（一口价）/AUCTION（拍卖） */
     private String saleMode;
 }

@@ -46,6 +46,8 @@ public class ProductVO {
     /** 销售模式 */
     private String saleMode;
 
+    private String tags;
+
     /** 获取成色文本 */
     public String getConditionText() {
         if (conditionLevel == null) return "未设置";

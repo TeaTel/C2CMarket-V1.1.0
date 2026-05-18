@@ -85,7 +85,8 @@ public class Product {
     /** 可见性：PUBLIC / ORG_ONLY */
     private String visibility;
 
-    /** 发布时间 */
+    private String tags;
+
     private LocalDateTime createdAt;
 
     /** 更新时间 */

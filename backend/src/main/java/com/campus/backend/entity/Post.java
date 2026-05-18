@@ -41,4 +41,6 @@ public class Post {
     private LocalDateTime endTime;
 
     private String location;
+
+    private String tags;
 }

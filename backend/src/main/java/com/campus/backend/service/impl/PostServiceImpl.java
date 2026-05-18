@@ -47,6 +47,7 @@ public class PostServiceImpl implements PostService {
         post.setContent(dto.getContent());
         post.setPostType(dto.getPostType() != null ? dto.getPostType() : "DISCUSSION");
         post.setBoardId(dto.getBoardId());
+        post.setTags(dto.getTags());
         postMapper.insert(post);
         log.info("发布帖子: id={}, userId={}, title={}", post.getId(), userId, dto.getTitle());
         return toPostVO(post, userId);
@@ -201,6 +202,7 @@ public class PostServiceImpl implements PostService {
         vo.setStatus(post.getStatus());
         vo.setCreatedAt(post.getCreatedAt());
         vo.setUpdatedAt(post.getUpdatedAt());
+        vo.setTags(post.getTags());
 
         User user = userMapper.selectById(post.getUserId());
         if (user != null) {

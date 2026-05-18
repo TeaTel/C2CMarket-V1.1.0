@@ -40,26 +40,53 @@
         </div>
       </div>
 
-      <div v-else-if="!showLoginGuide && feedItems.length === 0" class="empty-state">
+      <div v-else-if="!showLoginGuide && feedItems.length === 0 && recommends.length === 0" class="empty-state">
         <div class="empty-icon">{{ emptyIcon }}</div>
         <p class="empty-text">{{ emptyText }}</p>
         <p class="empty-subtext">{{ emptySubText }}</p>
       </div>
 
-      <div v-else class="feed-list">
-        <PostCard
-          v-for="item in feedItems.filter(i => i.itemType === 'POST')"
-          :key="'post-' + item.id"
-          :post="item"
-          @click="goToPost(item)"
-        />
-        <ProductCard
-          v-for="item in feedItems.filter(i => i.itemType === 'PRODUCT')"
-          :key="'product-' + item.id"
-          :product="item"
-          @click="goToProduct(item.id)"
-        />
-      </div>
+      <template v-else>
+        <section v-if="recommends.length > 0" class="recommend-section">
+          <div class="section-header">
+            <h3 class="section-title">✨ 猜你喜欢</h3>
+            <span class="section-desc">根据你的浏览推荐</span>
+          </div>
+          <div class="recommend-scroll">
+            <PostCard
+              v-for="item in recommends.filter(i => i.itemType === 'POST')"
+              :key="'rec-post-' + item.id"
+              :post="item"
+              @click="goToPost(item)"
+            />
+            <ProductCard
+              v-for="item in recommends.filter(i => i.itemType === 'PRODUCT')"
+              :key="'rec-product-' + item.id"
+              :product="item"
+              @click="goToProduct(item.id)"
+            />
+          </div>
+        </section>
+
+        <div class="section-divider" v-if="recommends.length > 0 && feedItems.length > 0">
+          <span>全部内容</span>
+        </div>
+
+        <div class="feed-list">
+          <PostCard
+            v-for="item in feedItems.filter(i => i.itemType === 'POST')"
+            :key="'post-' + item.id"
+            :post="item"
+            @click="goToPost(item)"
+          />
+          <ProductCard
+            v-for="item in feedItems.filter(i => i.itemType === 'PRODUCT')"
+            :key="'product-' + item.id"
+            :product="item"
+            @click="goToProduct(item.id)"
+          />
+        </div>
+      </template>
 
       <div v-if="!loading && hasMore && feedItems.length > 0" class="load-more">
         <button @click="loadMoreItems" :disabled="loadingMore" class="load-more-btn">
@@ -101,6 +128,9 @@ const pageSize = 12
 
 const circles = ref([])
 
+const recommends = ref([])
+const recLoading = ref(false)
+
 const isAuthenticated = computed(() => authStore.isAuthenticated.value)
 
 const showLoginGuide = computed(() => {
@@ -125,6 +155,7 @@ const emptySubText = computed(() => {
 onMounted(() => {
   loadCircles()
   loadFeed()
+  loadRecommendations()
   window.addEventListener('scroll', handleScroll)
 })
 
@@ -236,6 +267,7 @@ function switchCircle(circleId) {
 }
 
 function goToPost(item) {
+  trackBehavior('POST', item.id)
   if (item.postType === 'ACTIVITY') {
     router.push(`/activities/${item.id}`)
   } else {
@@ -244,11 +276,32 @@ function goToPost(item) {
 }
 
 function goToProduct(productId) {
+  trackBehavior('PRODUCT', productId)
   router.push(`/products/${productId}`)
 }
 
 function goToLogin() {
   router.push({ path: '/login', query: { redirect: '/' } })
+}
+
+async function loadRecommendations() {
+  if (!isAuthenticated.value) return
+  try {
+    recLoading.value = true
+    const res = await feedApi.getRecommendations(6)
+    if (res.code === 200) {
+      recommends.value = res.data?.list || []
+    }
+  } catch (e) {
+    // silent
+  } finally {
+    recLoading.value = false
+  }
+}
+
+function trackBehavior(targetType, targetId) {
+  if (!isAuthenticated.value) return
+  feedApi.recordBehavior(targetType, targetId).catch(() => {})
 }
 </script>
 
@@ -302,6 +355,53 @@ function goToLogin() {
 
 .feed-content {
   padding: 12px 16px;
+}
+
+.recommend-section {
+  margin-bottom: 16px;
+}
+
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.section-desc {
+  font-size: 12px;
+  color: #999;
+}
+
+.recommend-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 12px;
+  color: #ccc;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.section-divider::before,
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #E8ECF0;
 }
 
 .loading-state {

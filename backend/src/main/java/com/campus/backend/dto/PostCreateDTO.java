@@ -18,4 +18,6 @@ public class PostCreateDTO {
     private String postType;
 
     private Long boardId;
+
+    private String tags;
 }

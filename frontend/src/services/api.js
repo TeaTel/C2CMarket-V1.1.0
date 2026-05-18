@@ -538,7 +538,9 @@ export const followApi = {
 
 // ==================== 信息流 API ====================
 export const feedApi = {
-  getFeed(params) { return api.get('/v2/feed', { params }) }
+  getFeed(params) { return api.get('/v2/feed', { params }) },
+  getRecommendations(limit = 6) { return api.get('/v2/feed/recommend', { params: { limit } }) },
+  recordBehavior(targetType, targetId) { return api.post('/v2/feed/behavior', { targetType, targetId }) }
 }
 
 // ==================== 活动 API ====================
