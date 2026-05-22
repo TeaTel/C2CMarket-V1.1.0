@@ -188,6 +188,31 @@ const routes = [
     component: () => import('../views/ActivityDetail.vue'),
     meta: { title: '活动详情' }
   },
+  // 组织页面
+  {
+    path: '/orgs/create',
+    name: 'CreateOrg',
+    component: () => import('../views/CreateOrgPage.vue'),
+    meta: { title: '创建组织' }
+  },
+  {
+    path: '/orgs/my',
+    name: 'MyOrgs',
+    component: () => import('../views/MyOrgsPage.vue'),
+    meta: { title: '我的组织' }
+  },
+  {
+    path: '/orgs/discover',
+    name: 'OrgDiscover',
+    component: () => import('../views/OrgDiscoverPage.vue'),
+    meta: { title: '发现组织' }
+  },
+  {
+    path: '/orgs/:id',
+    name: 'OrgDetail',
+    component: () => import('../views/OrgDetailPage.vue'),
+    meta: { title: '组织详情' }
+  },
 ]
 
 const router = createRouter({

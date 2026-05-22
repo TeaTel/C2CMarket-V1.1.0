@@ -557,6 +557,28 @@ export const storyApi = {
   getUserStories(userId) { return api.get(`/v2/stories/user/${userId}`) }
 }
 
+// ==================== 组织 API ====================
+export const organizationApi = {
+  create(data) { return api.post('/v2/organizations', data) },
+  getDetail(id) { return api.get(`/v2/organizations/${id}`) },
+  getMyOrgs() { return api.get('/v2/organizations/my') },
+  getList(params) { return api.get('/v2/organizations', { params }) },
+  invite(orgId, inviteeId) { return api.post(`/v2/organizations/${orgId}/invite`, { inviteeId }) },
+  acceptInvite(code) { return api.post(`/v2/organizations/invitations/${code}/accept`) },
+  getMyInvitations() { return api.get('/v2/organizations/invitations/my') },
+  applyJoin(orgId, message) { return api.post(`/v2/organizations/${orgId}/apply`, { message }) },
+  getPendingRequests(orgId) { return api.get(`/v2/organizations/${orgId}/requests`) },
+  approveRequest(requestId) { return api.put(`/v2/organizations/requests/${requestId}/approve`) },
+  rejectRequest(requestId) { return api.put(`/v2/organizations/requests/${requestId}/reject`) },
+  getMembers(orgId, params) { return api.get(`/v2/organizations/${orgId}/members`, { params }) },
+  removeMember(orgId, userId) { return api.delete(`/v2/organizations/${orgId}/members/${userId}`) },
+  changeRole(orgId, userId, role) { return api.put(`/v2/organizations/${orgId}/members/${userId}/role`, { role }) },
+  getMyRole(orgId) { return api.get(`/v2/organizations/${orgId}/my-role`) },
+  getAuditLogs(orgId, limit) { return api.get(`/v2/organizations/${orgId}/audit-logs`, { params: { limit } }) },
+  approveOrg(id) { return api.put(`/v2/organizations/${id}/approve`) },
+  rejectOrg(id) { return api.put(`/v2/organizations/${id}/reject`) }
+}
+
 // 创建全局WebSocket实例
 export const wsManager = new WebSocketManager()
 
