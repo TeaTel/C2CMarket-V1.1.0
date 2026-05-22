@@ -85,8 +85,10 @@
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { organizationApi } from '../services/api'
+import { useToast } from '../use/useToast'
 
 const router = useRouter()
+const toast = useToast()
 const currentStep = ref(1)
 const submitting = ref(false)
 const steps = [{ step: 1, label: '基本信息' }, { step: 2, label: '详细资料' }, { step: 3, label: '确认提交' }]
@@ -119,11 +121,11 @@ async function submitForm() {
   try {
     const res = await organizationApi.create({ ...form })
     if (res.code === 200) {
-      alert('组织创建成功！等待审核通过后即可使用。')
+      toast.showToast('组织创建成功！等待审核通过后即可使用。', 'success')
       router.push('/orgs/my')
     }
   } catch (e) {
-    alert('创建失败，请稍后重试')
+    toast.showToast('创建失败，请稍后重试', 'error')
   } finally {
     submitting.value = false
   }

@@ -175,9 +175,11 @@
 <script setup>
 import { ref } from 'vue'
 import { useAuthStore } from '../store/auth'
+import { useToast } from '../use/useToast'
 import NavBar from '../components/NavBar.vue'
 
 const authStore = useAuthStore()
+const toast = useToast()
 const saving = ref(false)
 const successMessage = ref('')
 
@@ -251,9 +253,10 @@ async function changePassword() {
   }
 }
 
-function confirmDeleteAccount() {
-  if (confirm('确定要注销账户吗？此操作不可撤销，您的所有数据将被永久删除！')) {
-    alert('账户注销功能需要二次确认，为了安全起见请联系客服处理')
+async function confirmDeleteAccount() {
+  const ok = await toast.showConfirm('确定要注销账户吗？此操作不可撤销，您的所有数据将被永久删除！')
+  if (ok) {
+    toast.showToast('账户注销功能需要二次确认，为了安全起见请联系客服处理', 'error')
   }
 }
 </script>

@@ -86,10 +86,12 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
 import { messageApi, wsManager, productApi, userApi } from '../services/api'
+import { useToast } from '../use/useToast'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const toast = useToast()
 
 const messages = ref([])
 const loadingHistory = ref(false)
@@ -252,7 +254,7 @@ async function markAsRead() {
 
 function goBack() { router.back() }
 function viewContactProfile() { showMoreOptions.value = false; router.push(`/users/${route.params.userId}`) }
-function clearMessages() { if (confirm('确定要清空聊天记录吗？')) { messages.value = []; showMoreOptions.value = false } }
+async function clearMessages() { const ok = await toast.showConfirm('确定要清空聊天记录吗？'); if (ok) { messages.value = []; showMoreOptions.value = false } }
 function toggleEmojiPicker() { showEmojiPicker.value = !showEmojiPicker.value }
 function insertEmoji(emoji) { newMessage.value += emoji; inputRef.value?.focus(); showEmojiPicker.value = false }
 function autoResize() { const tx = inputRef.value; if (!tx) return; tx.style.height = 'auto'; tx.style.height = Math.min(tx.scrollHeight, 120) + 'px' }

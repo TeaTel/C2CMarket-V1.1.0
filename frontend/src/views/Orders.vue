@@ -145,9 +145,11 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
 import NavBar from '../components/NavBar.vue'
 import { orderApi } from '../services/api'
+import { useToast } from '../use/useToast'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const toast = useToast()
 
 const activeTab = ref('buyer')
 const orders = ref([])
@@ -234,40 +236,36 @@ function viewOrderDetail(orderId) {
 }
 
 async function handleCancelOrder(orderId) {
-  if (!confirm('确定要取消这个订单吗？')) {
-    return
-  }
-  
+  const ok = await toast.showConfirm('确定要取消这个订单吗？')
+  if (!ok) return
   try {
     const response = await orderApi.cancelOrder(orderId)
     if (response.code === 200) {
-      alert('订单已取消')
+      toast.showToast('订单已取消', 'success')
       loadOrders()
     } else {
-      alert(response.message || '取消订单失败')
+      toast.showToast(response.message || '取消订单失败', 'error')
     }
   } catch (error) {
     console.error('取消订单失败:', error)
-    alert('取消订单失败，请稍后重试')
+    toast.showToast('取消订单失败，请稍后重试', 'error')
   }
 }
 
 async function handleConfirmOrder(orderId) {
-  if (!confirm('确认收到商品了吗？')) {
-    return
-  }
-  
+  const ok = await toast.showConfirm('确认收到商品了吗？')
+  if (!ok) return
   try {
     const response = await orderApi.confirmOrder(orderId)
     if (response.code === 200) {
-      alert('订单已完成')
+      toast.showToast('订单已完成', 'success')
       loadOrders()
     } else {
-      alert(response.message || '确认收货失败')
+      toast.showToast(response.message || '确认收货失败', 'error')
     }
   } catch (error) {
     console.error('确认收货失败:', error)
-    alert('确认收货失败，请稍后重试')
+    toast.showToast('确认收货失败，请稍后重试', 'error')
   }
 }
 
@@ -275,33 +273,31 @@ async function handleAcceptOrder(orderId) {
   try {
     const response = await orderApi.updateOrderStatus(orderId, 'accepted')
     if (response.code === 200) {
-      alert('订单已接受')
+      toast.showToast('订单已接受', 'success')
       loadOrders()
     } else {
-      alert(response.message || '接受订单失败')
+      toast.showToast(response.message || '接受订单失败', 'error')
     }
   } catch (error) {
     console.error('接受订单失败:', error)
-    alert('接受订单失败，请稍后重试')
+    toast.showToast('接受订单失败，请稍后重试', 'error')
   }
 }
 
 async function handleRejectOrder(orderId) {
-  if (!confirm('确定要拒绝这个订单吗？')) {
-    return
-  }
-  
+  const ok = await toast.showConfirm('确定要拒绝这个订单吗？')
+  if (!ok) return
   try {
     const response = await orderApi.updateOrderStatus(orderId, 'rejected')
     if (response.code === 200) {
-      alert('订单已拒绝')
+      toast.showToast('订单已拒绝', 'success')
       loadOrders()
     } else {
-      alert(response.message || '拒绝订单失败')
+      toast.showToast(response.message || '拒绝订单失败', 'error')
     }
   } catch (error) {
     console.error('拒绝订单失败:', error)
-    alert('拒绝订单失败，请稍后重试')
+    toast.showToast('拒绝订单失败，请稍后重试', 'error')
   }
 }
 
@@ -309,14 +305,14 @@ async function handleShipOrder(orderId) {
   try {
     const response = await orderApi.updateOrderStatus(orderId, 'shipped')
     if (response.code === 200) {
-      alert('订单已发货')
+      toast.showToast('订单已发货', 'success')
       loadOrders()
     } else {
-      alert(response.message || '发货失败')
+      toast.showToast(response.message || '发货失败', 'error')
     }
   } catch (error) {
     console.error('发货失败:', error)
-    alert('发货失败，请稍后重试')
+    toast.showToast('发货失败，请稍后重试', 'error')
   }
 }
 </script>

@@ -1,5 +1,8 @@
 <template>
   <div id="app" class="app-container">
+    <!-- 全局 Toast / Confirm 非阻塞通知 -->
+    <ToastProvider />
+
     <!-- 左侧抽屉菜单触发按钮 -->
     <button v-if="showAppHeader" class="side-menu-trigger" @click="showSideMenu = true" :class="{ pulsing: !hasSeenMenu }">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -37,6 +40,7 @@ import { wsManager } from './services/api'
 import TabBar from './components/NavBar.vue'
 import AppHeader from './components/AppHeader.vue'
 import SideMenu from './components/SideMenu.vue'
+import ToastProvider from './components/ToastProvider.vue'
 
 const route = useRoute()
 const authStore = useAuthStore()

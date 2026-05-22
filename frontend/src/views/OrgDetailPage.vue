@@ -83,9 +83,11 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { organizationApi } from '../services/api'
+import { useToast } from '../use/useToast'
 
 const route = useRoute()
 const router = useRouter()
+const toast = useToast()
 const org = ref(null)
 const loading = ref(true)
 const myRole = ref(null)
@@ -125,14 +127,14 @@ async function loadManageData(orgId) {
   } catch (e) {}
 }
 
-async function applyJoin() { applying.value = true; try { await organizationApi.applyJoin(route.params.id, ''); alert('申请已提交'); } catch (e) { alert('申请失败'); } finally { applying.value = false } }
+async function applyJoin() { applying.value = true; try { await organizationApi.applyJoin(route.params.id, ''); toast.showToast('申请已提交', 'success'); } catch (e) { toast.showToast('申请失败', 'error'); } finally { applying.value = false } }
 async function approveReq(id) { await organizationApi.approveRequest(id); loadManageData(route.params.id) }
 async function rejectReq(id) { await organizationApi.rejectRequest(id); loadManageData(route.params.id) }
 async function changeRole(uid, role) { await organizationApi.changeRole(route.params.id, uid, role); loadManageData(route.params.id) }
-async function removeMem(uid) { if (!confirm('确定移出该成员?')) return; await organizationApi.removeMember(route.params.id, uid); loadManageData(route.params.id) }
+async function removeMem(uid) { const ok = await toast.showConfirm('确定移出该成员?'); if (!ok) return; await organizationApi.removeMember(route.params.id, uid); loadManageData(route.params.id) }
 async function doInvite() {
   if (!inviteUserId.value) return
-  try { await organizationApi.invite(route.params.id, Number(inviteUserId.value)); alert('邀请已发送'); inviteUserId.value = '' } catch (e) { alert('邀请失败') }
+  try { await organizationApi.invite(route.params.id, Number(inviteUserId.value)); toast.showToast('邀请已发送', 'success'); inviteUserId.value = '' } catch (e) { toast.showToast('邀请失败', 'error') }
 }
 
 function typeLabel(t) { return { CLUB: '社团', STUDENT_ORG: '学生组织', BUSINESS: '商业', PERSONAL: '个人' }[t] || t }

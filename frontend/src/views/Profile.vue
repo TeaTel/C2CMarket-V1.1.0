@@ -175,9 +175,11 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
 import { productApi, favoriteApi } from '../services/api'
+import { useToast } from '../use/useToast'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const toast = useToast()
 
 const isAuthenticated = computed(() => authStore.isAuthenticated.value)
 
@@ -244,7 +246,7 @@ async function fetchStats() {
 }
 
 function handleAvatarClick() {
-  alert('头像上传功能开发中...')
+  toast.showToast('头像上传功能开发中...')
 }
 
 function goToSettings() {

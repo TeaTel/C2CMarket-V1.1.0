@@ -92,9 +92,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useToast } from '../use/useToast'
 
 const addresses = ref([])
 const showForm = ref(false)
+const toast = useToast()
 const isEditing = ref(false)
 const editIndex = ref(-1)
 
@@ -147,7 +149,7 @@ function editAddress(index) {
 
 function saveAddress() {
   if (!formData.value.name.trim() || !formData.value.phone.trim() || !formData.value.detail.trim()) {
-    alert('请填写收货人、手机号和详细地址')
+    toast.showToast('请填写收货人、手机号和详细地址', 'error')
     return
   }
 

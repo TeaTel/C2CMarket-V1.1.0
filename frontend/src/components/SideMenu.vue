@@ -67,7 +67,7 @@
 
           <div class="menu-divider"><span>更多功能</span></div>
 
-          <div class="menu-item new-feature" @click="goRoute('/orgs/my')">
+          <div class="menu-item" @click="goRoute('/orgs/my')">
             <span class="menu-icon">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
             </span>
@@ -122,12 +122,14 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
+import { useToast } from '../use/useToast'
 
 defineProps({ visible: { type: Boolean, default: false } })
 const emit = defineEmits(['close'])
 
 const router = useRouter()
 const authStore = useAuthStore()
+const toast = useToast()
 
 const defaultAvatar = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#eee"/><circle cx="20" cy="15" r="8" fill="#ccc"/><ellipse cx="20" cy="35" rx="12" ry="8" fill="#ccc"/></svg>')
 
@@ -136,7 +138,7 @@ const stats = reactive({ published: 0, sold: 0, favorites: 0 })
 function goProfile() { emit('close'); router.push('/profile') }
 function goLogin() { emit('close'); router.push('/login') }
 function goRoute(path) { emit('close'); router.push(path) }
-function handleAbout() { emit('close'); alert('校园二手交易平台 v2.0 —— 让每一件闲置都有归宿') }
+function handleAbout() { emit('close'); toast.showToast('校园二手交易平台 v2.0 —— 让每一件闲置都有归宿') }
 function handleLogout() { emit('close'); authStore.logout() }
 function handleNewFeature(feature) {
   emit('close')
@@ -145,7 +147,7 @@ function handleNewFeature(feature) {
     campus: '我的校区功能开发中，完成后可切换不同校区查看专属内容~',
     stream: '推流功能规划中，届时可直播展示商品详情！'
   }
-  alert(messages[feature] || '功能开发中')
+  toast.showToast(messages[feature] || '功能开发中')
 }
 function onAvatarError(e) { e.target.src = defaultAvatar }
 </script>
