@@ -2,10 +2,15 @@ package com.campus.backend.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Result<T> {
+
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     private int code;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String message;
+
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     private T data;
 
     public Result(int code, String message, T data) {

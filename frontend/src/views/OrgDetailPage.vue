@@ -108,12 +108,20 @@ onMounted(async () => {
       organizationApi.getDetail(orgId),
       organizationApi.getMyRole(orgId)
     ])
-    if (orgRes.status === 'fulfilled' && orgRes.value.code === 200) org.value = orgRes.value.data
-    if (roleRes.status === 'fulfilled' && roleRes.value.code === 200) myRole.value = roleRes.value.data
+    if (orgRes.status === 'fulfilled' && orgRes.value && orgRes.value.code === 200) {
+      org.value = orgRes.value.data || null
+    }
+    if (roleRes.status === 'fulfilled' && roleRes.value && roleRes.value.code === 200) {
+      myRole.value = roleRes.value.data || null
+    }
     if (myRole.value && (myRole.value.role === 'ADMIN' || myRole.value.role === 'MODERATOR')) {
       loadManageData(orgId)
     }
-  } catch (e) {} finally { loading.value = false }
+  } catch (e) {
+    console.error('OrgDetail load error:', e)
+  } finally {
+    loading.value = false
+  }
 })
 
 async function loadManageData(orgId) {

@@ -53,7 +53,10 @@ async function search() {
     if (keyword.value) params.keyword = keyword.value
     const res = await organizationApi.getList(params)
     if (res.code === 200) orgs.value = res.data?.list || []
-  } catch (e) { orgs.value = [] } finally { loading.value = false }
+  } catch (e) {
+    console.error('OrgDiscover load error:', e)
+    orgs.value = []
+  } finally { loading.value = false }
 }
 
 function typeLabel(t) { return { CLUB: '社团', STUDENT_ORG: '学生组织', BUSINESS: '商业', PERSONAL: '个人' }[t] || t }
