@@ -12,9 +12,9 @@
 
     <div v-if="loading" class="loading-state"><div v-for="i in 4" :key="i" class="skeleton-card"></div></div>
     <main v-else class="org-list">
-      <div v-for="org in orgs" :key="org.id" class="org-card" @click="$router.push(`/orgs/${org.id}`)">
+      <div v-for="org in orgs" :key="org.id" class="org-card">
         <div class="org-logo" :style="{ backgroundColor: randomColor(org.id) }">{{ org.name.charAt(0) }}</div>
-        <div class="org-info">
+        <div class="org-info" @click="$router.push(`/orgs/${org.id}`)">
           <h3>{{ org.name }}</h3>
           <p>{{ org.description || '暂无简介' }}</p>
           <div class="org-meta">
@@ -23,7 +23,10 @@
             <span>{{ org.joinType === 'INVITE' ? '仅邀请' : '可申请加入' }}</span>
           </div>
         </div>
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ccc" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
+        <button v-if="org.joinType === 'APPLY'" class="apply-btn" :disabled="applyingIds.has(org.id)" @click.stop="applyToOrg(org.id)">
+          {{ applyingIds.has(org.id) ? '申请中' : '申请' }}
+        </button>
+        <svg v-else @click.stop="$router.push(`/orgs/${org.id}`)" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ccc" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
       </div>
     </main>
   </div>
@@ -32,9 +35,13 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { organizationApi } from '../services/api'
+import { useToast } from '../use/useToast'
+
+const toast = useToast()
 const orgs = ref([])
 const loading = ref(true)
 const keyword = ref('')
+const applyingIds = ref(new Set())
 const colors = ['#FF6A00','#1890FF','#52c41a','#722ED1','#EB2F96','#13C2C2','#FADB14','#FA541C','#2F54EB','#A0D911']
 
 onMounted(() => search())
@@ -51,6 +58,23 @@ async function search() {
 
 function typeLabel(t) { return { CLUB: '社团', STUDENT_ORG: '学生组织', BUSINESS: '商业', PERSONAL: '个人' }[t] || t }
 function randomColor(id) { return colors[Math.abs(Number(id)) % colors.length] }
+
+async function applyToOrg(orgId) {
+  if (applyingIds.value.has(orgId)) return
+  applyingIds.value.add(orgId)
+  try {
+    const res = await organizationApi.applyJoin(orgId, '')
+    if (res.code === 200) {
+      toast.showToast('申请已提交，等待管理员审核', 'success')
+    } else {
+      toast.showToast(res.message || '申请失败', 'error')
+      applyingIds.value.delete(orgId)
+    }
+  } catch (e) {
+    toast.showToast(e.message || '申请失败，请稍后重试', 'error')
+    applyingIds.value.delete(orgId)
+  }
+}
 </script>
 
 <style scoped>
@@ -74,4 +98,12 @@ function randomColor(id) { return colors[Math.abs(Number(id)) % colors.length] }
 .org-info p { margin: 0 0 6px; font-size: 13px; color: #999; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .org-meta { display: flex; gap: 10px; font-size: 12px; color: #999; }
 .org-type { padding: 2px 8px; background: #FFF7E6; color: #FF6A00; font-size: 11px; border-radius: 4px; }
+.apply-btn {
+  padding: 8px 16px; border-radius: 16px; border: none;
+  background: linear-gradient(135deg, #FF6A00, #FF8533); color: #fff;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  flex-shrink: 0; transition: all 0.15s;
+}
+.apply-btn:active { transform: scale(0.95); }
+.apply-btn:disabled { opacity: 0.5; }
 </style>

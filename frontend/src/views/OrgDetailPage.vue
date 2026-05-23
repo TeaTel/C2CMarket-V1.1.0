@@ -25,7 +25,8 @@
           <button v-if="myRole.role === 'ADMIN' || myRole.role === 'MODERATOR'" class="manage-btn" @click="showManage = !showManage">⚙ 管理</button>
         </div>
         <div class="org-actions" v-else>
-          <button v-if="org.joinType === 'APPLY'" class="join-btn" @click="applyJoin" :disabled="applying">{{ applying ? '申请中...' : '申请加入' }}</button>
+          <button v-if="org.joinType === 'APPLY' && !hasApplied" class="join-btn" @click="applyJoin" :disabled="applying">{{ applying ? '提交中...' : '申请加入' }}</button>
+          <span v-else-if="hasApplied" class="applied-badge">已申请，等待审核</span>
         </div>
       </section>
 
@@ -98,6 +99,7 @@ const members = ref([])
 const auditLogs = ref([])
 const inviteUserId = ref('')
 const applying = ref(false)
+const hasApplied = ref(false)
 
 onMounted(async () => {
   const orgId = route.params.id
@@ -127,7 +129,22 @@ async function loadManageData(orgId) {
   } catch (e) {}
 }
 
-async function applyJoin() { applying.value = true; try { await organizationApi.applyJoin(route.params.id, ''); toast.showToast('申请已提交', 'success'); } catch (e) { toast.showToast('申请失败', 'error'); } finally { applying.value = false } }
+async function applyJoin() {
+  applying.value = true
+  try {
+    const res = await organizationApi.applyJoin(route.params.id, '')
+    if (res.code === 200) {
+      toast.showToast('申请已提交，等待管理员审核', 'success')
+      hasApplied.value = true
+    } else {
+      toast.showToast(res.message || '申请失败', 'error')
+    }
+  } catch (e) {
+    toast.showToast(e.message || '申请失败，请稍后重试', 'error')
+  } finally {
+    applying.value = false
+  }
+}
 async function approveReq(id) { await organizationApi.approveRequest(id); loadManageData(route.params.id) }
 async function rejectReq(id) { await organizationApi.rejectRequest(id); loadManageData(route.params.id) }
 async function changeRole(uid, role) { await organizationApi.changeRole(route.params.id, uid, role); loadManageData(route.params.id) }
@@ -165,6 +182,7 @@ function formatTime(t) { return t ? new Date(t).toLocaleString('zh-CN') : '' }
 .manage-btn { padding: 8px 20px; border: 1px solid #DDE1E6; border-radius: 16px; background: #fff; font-size: 14px; cursor: pointer; }
 .join-btn { padding: 10px 36px; border-radius: 20px; border: none; background: linear-gradient(135deg,#FF6A00,#FF8533); color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; }
 .join-btn:disabled { opacity: 0.6; }
+.applied-badge { padding: 8px 20px; background: #FFF7E6; color: #FA8C16; border-radius: 16px; font-size: 14px; font-weight: 500; }
 
 .manage-panel { background: #fff; border-radius: 16px; overflow: hidden; }
 .panel-tabs { display: flex; border-bottom: 1px solid #f0f0f0; }
