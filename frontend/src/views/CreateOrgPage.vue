@@ -122,10 +122,12 @@ async function submitForm() {
     const res = await organizationApi.create({ ...form })
     if (res.code === 200) {
       toast.showToast('组织创建成功！等待审核通过后即可使用。', 'success')
-      router.push('/orgs/my')
+      setTimeout(() => router.push('/orgs/my'), 600)
+    } else {
+      toast.showToast(res.message || '创建失败，请稍后重试', 'error')
     }
   } catch (e) {
-    toast.showToast('创建失败，请稍后重试', 'error')
+    toast.showToast(e.message || '创建失败，请检查网络连接', 'error')
   } finally {
     submitting.value = false
   }

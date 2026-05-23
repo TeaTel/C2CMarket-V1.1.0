@@ -23,6 +23,7 @@
           <p>{{ org.description || '暂无简介' }}</p>
           <div class="org-meta">
             <span class="org-type">{{ typeLabel(org.orgType) }}</span>
+            <span :class="['org-status', org.status === 'PENDING' ? 'status-pending' : 'status-ok']">{{ org.status === 'APPROVED' ? '已通过' : org.status === 'PENDING' ? '审核中' : org.status }}</span>
             <span class="org-count">{{ org.memberCount || 0 }} 成员</span>
           </div>
         </div>
@@ -36,8 +37,10 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { organizationApi } from '../services/api'
+import { useToast } from '../use/useToast'
 
 const router = useRouter()
+const toast = useToast()
 const orgs = ref([])
 const loading = ref(true)
 
@@ -47,7 +50,10 @@ onMounted(async () => {
   try {
     const res = await organizationApi.getMyOrgs()
     if (res.code === 200) orgs.value = res.data || []
-  } catch (e) { orgs.value = [] } finally { loading.value = false }
+  } catch (e) {
+    toast.showToast('加载组织列表失败，请稍后重试', 'error')
+    orgs.value = []
+  } finally { loading.value = false }
 })
 
 function typeLabel(t) { return { CLUB: '社团', STUDENT_ORG: '学生组织', BUSINESS: '商业', PERSONAL: '个人' }[t] || t }
@@ -76,5 +82,8 @@ function randomColor(id) { return colors[Math.abs(Number(id)) % colors.length] }
 .org-info p { margin: 0 0 6px; font-size: 13px; color: #999; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .org-meta { display: flex; gap: 12px; }
 .org-type { padding: 2px 8px; background: #FFF7E6; color: #FF6A00; font-size: 11px; border-radius: 4px; }
+.org-status { padding: 2px 8px; font-size: 11px; border-radius: 4px; }
+.status-pending { background: #FFF7E6; color: #FA8C16; }
+.status-ok { background: #F6FFED; color: #52C41A; }
 .org-count { font-size: 12px; color: #999; }
 </style>

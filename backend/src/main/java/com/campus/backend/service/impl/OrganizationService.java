@@ -30,6 +30,7 @@ public class OrganizationService {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "必须选择加入方式: INVITE(仅邀请) 或 APPLY(可申请加入)");
         }
         org.setFounderId(userId);
+        org.setStatus("PENDING");
         orgMapper.insert(org);
 
         OrgMember founder = new OrgMember();
