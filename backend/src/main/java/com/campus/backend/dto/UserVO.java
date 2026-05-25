@@ -17,6 +17,7 @@ public class UserVO {
     private String avatar;
     private Integer gender;
     private String school;
+    private String campus;
     private String major;
     private String grade;
     private String wechat;

@@ -1,23 +1,36 @@
 <template>
   <div class="home-page">
 
-    <nav class="circle-sub-nav" v-if="circles.length > 0">
+    <nav class="circle-sub-nav">
       <button
         class="circle-tag"
-        :class="{ active: activeCircle === null }"
-        @click="switchCircle(null)"
+        :class="{ active: activeTag === null && activeCampusTag === null }"
+        @click="switchTag(null)"
       >
         全部
       </button>
-      <button
-        v-for="circle in circles"
-        :key="circle.id"
-        class="circle-tag"
-        :class="{ active: activeCircle === circle.id }"
-        @click="switchCircle(circle.id)"
-      >
-        {{ circle.icon || '' }} {{ circle.name }}
-      </button>
+      <template v-if="activeTab === 'campus'">
+        <button
+          v-for="campus in campusTags"
+          :key="campus"
+          class="circle-tag campus"
+          :class="{ active: activeCampusTag === campus }"
+          @click="switchCampusTag(campus)"
+        >
+          {{ campus }}
+        </button>
+      </template>
+      <template v-else>
+        <button
+          v-for="tag in circleTags"
+          :key="tag"
+          class="circle-tag"
+          :class="{ active: activeTag === tag }"
+          @click="switchTag(tag)"
+        >
+          {{ tag }}
+        </button>
+      </template>
     </nav>
 
     <main class="feed-content">
@@ -47,54 +60,43 @@
       </div>
 
       <template v-else>
-        <section v-if="recommends.length > 0" class="recommend-section">
+        <section v-if="recommends.length > 0 && activeTab !== 'following'" class="recommend-section">
           <div class="section-header">
             <h3 class="section-title">✨ 猜你喜欢</h3>
             <span class="section-desc">根据你的浏览推荐</span>
           </div>
           <div class="recommend-scroll">
-            <PostCard
-              v-for="item in recommends.filter(i => i.itemType === 'POST')"
-              :key="'rec-post-' + item.id"
-              :post="item"
-              @click="goToPost(item)"
-            />
-            <ProductCard
-              v-for="item in recommends.filter(i => i.itemType === 'PRODUCT')"
-              :key="'rec-product-' + item.id"
-              :product="item"
-              @click="goToProduct(item.id)"
-            />
+            <template v-for="item in recommends" :key="'rec-' + item.itemType + '-' + item.id">
+              <PostCard v-if="item.itemType === 'POST'" :post="item" @click="goToPost(item)" />
+              <ProductCard v-else-if="item.itemType === 'PRODUCT'" :product="item" @click="goToProduct(item.id)" />
+            </template>
           </div>
         </section>
 
-        <div class="section-divider" v-if="recommends.length > 0 && feedItems.length > 0">
+        <div class="section-divider" v-if="recommends.length > 0 && activeTab !== 'following' && feedItems.length > 0">
           <span>全部内容</span>
         </div>
 
         <div class="feed-list">
-          <PostCard
-            v-for="item in feedItems.filter(i => i.itemType === 'POST')"
-            :key="'post-' + item.id"
-            :post="item"
-            @click="goToPost(item)"
-          />
-          <ProductCard
-            v-for="item in feedItems.filter(i => i.itemType === 'PRODUCT')"
-            :key="'product-' + item.id"
-            :product="item"
-            @click="goToProduct(item.id)"
-          />
+          <template v-for="item in feedItems" :key="item.itemType + '-' + item.id">
+            <PostCard v-if="item.itemType === 'POST'" :post="item" @click="goToPost(item)" />
+            <ProductCard v-else-if="item.itemType === 'PRODUCT'" :product="item" @click="goToProduct(item.id)" />
+          </template>
         </div>
       </template>
 
-      <div v-if="!loading && hasMore && feedItems.length > 0" class="load-more">
-        <button @click="loadMoreItems" :disabled="loadingMore" class="load-more-btn">
-          {{ loadingMore ? '加载中...' : '上滑加载更多' }}
-        </button>
+      <!-- 加载更多状态 -->
+      <div v-if="loadingMore" class="loading-more">
+        <div class="loading-spinner"></div>
+        <span class="loading-text">加载中...</span>
       </div>
 
-      <div v-if="!hasMore && feedItems.length > 0" class="no-more">
+      <div v-if="loadError && !loading && feedItems.length > 0" class="load-error">
+        <span>加载失败</span>
+        <button @click="retryLoadMore" class="retry-small-btn">点击重试</button>
+      </div>
+
+      <div v-if="!hasMore && !loadingMore && feedItems.length > 0" class="no-more">
         <span class="no-more-line"></span>
         <span class="no-more-text">已经到底啦~</span>
         <span class="no-more-line"></span>
@@ -107,7 +109,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
-import { feedApi, categoryApi } from '../services/api'
+import { feedApi } from '../services/api'
 import PostCard from '../components/PostCard.vue'
 import ProductCard from '../components/ProductCard.vue'
 
@@ -116,17 +118,28 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const activeTab = ref(route.query.tab || 'discover')
-const activeCircle = ref(null)
+const activeTag = ref(null)
+const activeCampusTag = ref(null)
+
+const circleTags = [
+  '数码', '书籍', '运动', '美食', '音乐',
+  '学习', '求职', '考研', '二手', '闲置',
+  '分享', '经验', '求助', '摄影', '旅行'
+]
+
+const campusTags = ['南三区', '南二区', '南一区', '中区', '东区', '西区']
 
 const feedItems = ref([])
 const loading = ref(true)
 const loadingMore = ref(false)
 const hasMore = ref(true)
 const error = ref(null)
+const loadError = ref(false)
 const currentPage = ref(1)
 const pageSize = 12
 
-const circles = ref([])
+// 已加载的ID集合，用于前端去重
+const loadedIds = ref(new Set())
 
 const recommends = ref([])
 const recLoading = ref(false)
@@ -152,36 +165,58 @@ const emptySubText = computed(() => {
   return texts[activeTab.value] || ''
 })
 
+// 滚动事件处理函数引用，用于卸载时移除
+let scrollHandler = null
+
 onMounted(() => {
-  loadCircles()
   loadFeed()
   loadRecommendations()
-  window.addEventListener('scroll', handleScroll)
+  setupScrollObserver()
 })
 
 onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll)
+  if (scrollHandler) {
+    window.removeEventListener('scroll', scrollHandler, { passive: true })
+    scrollHandler = null
+  }
 })
 
-async function loadCircles() {
-  try {
-    const res = await categoryApi.getCategories({ size: 20 })
-    if (res.code === 200) {
-      const data = res.data || {}
-      circles.value = (data.list || data.records || data.items || []).map(c => ({
-        id: c.id,
-        name: c.name,
-        icon: c.icon || ''
-      }))
-    }
-  } catch (e) {
-    circles.value = []
+function setupScrollObserver() {
+  let ticking = false
+  scrollHandler = () => {
+    if (ticking) return
+    ticking = true
+    requestAnimationFrame(() => {
+      ticking = false
+      if (loadingMore.value || !hasMore.value || loading.value || loadError.value) return
+      const scrollTop = document.documentElement.scrollTop || document.body.scrollTop
+      const scrollHeight = document.documentElement.scrollHeight
+      const clientHeight = document.documentElement.clientHeight
+      if (scrollTop + clientHeight >= scrollHeight - 200) {
+        loadMoreItems()
+      }
+    })
   }
+  window.addEventListener('scroll', scrollHandler, { passive: true })
+}
+
+// 前端去重：基于 itemType + id
+function dedupItems(newItems) {
+  const result = []
+  for (const item of newItems) {
+    const key = `${item.itemType}-${item.id}`
+    if (!loadedIds.value.has(key)) {
+      loadedIds.value.add(key)
+      result.push(item)
+    }
+  }
+  return result
 }
 
 async function loadFeed(isLoadMore = false) {
   try {
     error.value = null
+    loadError.value = false
     if (isLoadMore) {
       loadingMore.value = true
     } else {
@@ -194,15 +229,20 @@ async function loadFeed(isLoadMore = false) {
       type: activeTab.value
     }
 
-    if (activeCircle.value) {
-      params.circleId = activeCircle.value
+    if (activeTag.value) {
+      params.tag = activeTag.value
+    }
+
+    if (activeCampusTag.value) {
+      params.campusTag = activeCampusTag.value
     }
 
     const res = await feedApi.getFeed(params)
 
     if (res.code === 200) {
       const data = res.data || {}
-      const newItems = data.list || data.records || data.items || []
+      const rawItems = data.list || data.records || data.items || []
+      const newItems = dedupItems(rawItems)
 
       if (isLoadMore) {
         feedItems.value = [...feedItems.value, ...newItems]
@@ -210,8 +250,17 @@ async function loadFeed(isLoadMore = false) {
         feedItems.value = newItems
       }
 
-      const total = data.total || 0
-      hasMore.value = feedItems.value.length < total
+      // 判断是否还有更多数据
+      if (rawItems.length === 0 || newItems.length === 0) {
+        // 返回空列表或全部去重后无新数据，说明没有更多了
+        hasMore.value = false
+      } else if (rawItems.length < pageSize) {
+        // 返回数量不足一页，说明是最后一页
+        hasMore.value = false
+      } else {
+        const total = data.total || 0
+        hasMore.value = feedItems.value.length < total
+      }
     } else {
       throw new Error(res.message || '加载内容失败')
     }
@@ -219,6 +268,9 @@ async function loadFeed(isLoadMore = false) {
     console.error('加载Feed失败:', err)
     if (!isLoadMore) {
       error.value = err.message || '加载失败，请稍后重试'
+    } else {
+      loadError.value = true
+      currentPage.value-- // 回退页码，允许重试
     }
   } finally {
     loading.value = false
@@ -226,42 +278,57 @@ async function loadFeed(isLoadMore = false) {
   }
 }
 
-function handleScroll() {
-  if (loadingMore.value || !hasMore.value || loading.value) return
-  const scrollTop = document.documentElement.scrollTop || document.body.scrollTop
-  const scrollHeight = document.documentElement.scrollHeight
-  const clientHeight = document.documentElement.clientHeight
-  if (scrollTop + clientHeight >= scrollHeight - 200) {
-    loadMoreItems()
-  }
+function loadMoreItems() {
+  if (!hasMore.value || loadingMore.value || loadError.value) return
+  currentPage.value++
+  loadFeed(true)
 }
 
-function loadMoreItems() {
-  if (!hasMore.value || loadingMore.value) return
-  currentPage.value++
+function retryLoadMore() {
+  loadError.value = false
   loadFeed(true)
 }
 
 watch(() => route.query.tab, (newTab) => {
   if (newTab && newTab !== activeTab.value) {
     activeTab.value = newTab
-    activeCircle.value = null
+    activeTag.value = null
+    activeCampusTag.value = null
     currentPage.value = 1
     hasMore.value = true
     feedItems.value = []
+    loadedIds.value = new Set()
     error.value = null
+    loadError.value = false
     window.scrollTo({ top: 0, behavior: 'smooth' })
     loadFeed()
   }
 })
 
-function switchCircle(circleId) {
-  if (activeCircle.value === circleId) return
-  activeCircle.value = circleId
+function switchTag(tag) {
+  if (activeTag.value === tag) return
+  activeTag.value = tag
+  activeCampusTag.value = null
   currentPage.value = 1
   hasMore.value = true
   feedItems.value = []
+  loadedIds.value = new Set()
   error.value = null
+  loadError.value = false
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+  loadFeed()
+}
+
+function switchCampusTag(campus) {
+  if (activeCampusTag.value === campus) return
+  activeCampusTag.value = campus
+  activeTag.value = null
+  currentPage.value = 1
+  hasMore.value = true
+  feedItems.value = []
+  loadedIds.value = new Set()
+  error.value = null
+  loadError.value = false
   window.scrollTo({ top: 0, behavior: 'smooth' })
   loadFeed()
 }
@@ -347,6 +414,11 @@ function trackBehavior(targetType, targetId) {
   background: linear-gradient(135deg, #FF6A00, #FF8533);
   color: #fff;
   box-shadow: 0 2px 8px rgba(255, 106, 0, 0.25);
+}
+
+.circle-tag.campus.active {
+  background: linear-gradient(135deg, #4CAF50, #66BB6A);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.25);
 }
 
 .circle-tag:active {
@@ -531,23 +603,59 @@ function trackBehavior(targetType, targetId) {
   gap: 12px;
 }
 
-.load-more {
-  text-align: center;
-  padding: 16px 0 8px;
+/* 加载更多动画 */
+.loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px 0 16px;
+  min-height: 60px;
 }
 
-.load-more-btn {
-  background: #f5f5f5;
-  color: #999;
-  padding: 8px 32px;
-  border-radius: 20px;
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid #f0f0f0;
+  border-top-color: #FF6A00;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
   font-size: 14px;
-  border: none;
-  cursor: pointer;
+  color: #999;
 }
 
-.load-more-btn:disabled {
-  opacity: 0.6;
+/* 加载失败 */
+.load-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px 0;
+  min-height: 60px;
+  color: #999;
+  font-size: 14px;
+}
+
+.retry-small-btn {
+  padding: 6px 16px;
+  border-radius: 14px;
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #666;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.retry-small-btn:active {
+  background: #f5f5f5;
 }
 
 .no-more {
@@ -556,6 +664,7 @@ function trackBehavior(targetType, targetId) {
   justify-content: center;
   gap: 12px;
   padding: 16px 0 32px;
+  min-height: 60px;
   color: #ccc;
   font-size: 13px;
 }

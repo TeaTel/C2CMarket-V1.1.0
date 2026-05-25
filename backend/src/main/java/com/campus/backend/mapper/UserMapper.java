@@ -54,7 +54,7 @@ public interface UserMapper {
      * 更新用户资料
      */
     @Update("UPDATE users SET nickname = #{nickname}, avatar = #{avatar}, gender = #{gender}, " +
-            "school = #{school}, major = #{major}, grade = #{grade}, " +
+            "school = #{school}, campus = #{campus}, major = #{major}, grade = #{grade}, " +
             "wechat = #{wechat}, qq = #{qq}, bio = #{bio}, updated_at = CURRENT_TIMESTAMP WHERE id = #{id}")
     int updateProfile(User user);
 

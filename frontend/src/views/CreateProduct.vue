@@ -20,48 +20,7 @@
     <main class="form-content">
       <section class="upload-section">
         <div class="section-title">商品图片</div>
-        <div class="image-grid">
-          <div
-            v-for="(img, index) in imageList"
-            :key="index"
-            class="image-item"
-          >
-            <img :src="img.url" alt="" class="preview-image" />
-            <div v-if="img.uploading" class="image-uploading">
-              <div class="upload-spinner"></div>
-            </div>
-            <div v-if="img.error" class="image-error-mask">
-              <span>上传失败</span>
-            </div>
-            <button @click="removeImage(index)" class="remove-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
-          </div>
-
-          <label
-            v-if="imageList.length < 9"
-            class="upload-trigger"
-          >
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              @change="handleImageUpload"
-              hidden
-            />
-            <div class="upload-icon-wrapper">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21,15 16,10 5,21"/>
-              </svg>
-            </div>
-            <span class="upload-text">{{ imageList.length }}/9</span>
-          </label>
-        </div>
+        <ImageUploader v-model="imageUrls" :max-count="9" :max-size="10" />
         <p class="upload-tip">第一张为封面图，最多上传9张（选填）</p>
       </section>
 
@@ -233,6 +192,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
 import { productApi, categoryApi } from '../services/api'
 import TagInput from '../components/TagInput.vue'
+import ImageUploader from '../components/ImageUploader.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -248,7 +208,7 @@ const formData = ref({
   location: ''
 })
 
-const imageList = ref([])
+const imageUrls = ref([])
 const submitting = ref(false)
 const categories = ref([])
 const categoriesLoading = ref(false)
@@ -394,39 +354,6 @@ async function loadCategories() {
   }
 }
 
-function handleImageUpload(event) {
-  const files = Array.from(event.target.files)
-
-  files.forEach(file => {
-    if (imageList.value.length >= 9) return
-
-    if (!file.type.startsWith('image/')) {
-      showToast('请选择图片文件', 'error')
-      return
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      showToast('图片大小不能超过5MB', 'error')
-      return
-    }
-
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      imageList.value.push({
-        url: e.target.result,
-        uploading: false,
-        error: false
-      })
-    }
-    reader.readAsDataURL(file)
-  })
-
-  event.target.value = ''
-}
-
-function removeImage(index) {
-  imageList.value.splice(index, 1)
-}
 
 async function handleSubmit() {
   if (!isFormValid.value || submitting.value) return
@@ -445,8 +372,8 @@ async function handleSubmit() {
   try {
     submitting.value = true
 
-    const imageUrls = imageList.value.map(img => img.url)
-    const coverImage = imageUrls.length > 0 ? imageUrls[0] : null
+    const uploadedUrls = imageUrls.value
+    const coverImage = uploadedUrls.length > 0 ? uploadedUrls[0] : null
 
     const productData = {
       name: formData.value.name.trim(),
@@ -457,7 +384,7 @@ async function handleSubmit() {
       conditionLevel: formData.value.conditionLevel,
       deliveryMethod: formData.value.deliveryMethod,
       location: formData.value.location.trim() || null,
-      imageUrls: imageUrls.length > 0 ? imageUrls : null,
+      imageUrls: uploadedUrls.length > 0 ? uploadedUrls : null,
       coverImage: coverImage,
       tags: tags.value.length > 0 ? tags.value : null
     }

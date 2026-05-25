@@ -53,4 +53,14 @@ public class FeedItemVO {
     private LocalDateTime createdAt;
 
     private LocalDateTime startTime;
+
+    private Boolean isAd;
+
+    private Integer exposureBoost;
+
+    private String tags;
+
+    private String campusTag;
+
+    private String userCampus;
 }

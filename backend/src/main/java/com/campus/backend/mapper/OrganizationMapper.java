@@ -8,7 +8,7 @@ import java.util.List;
 public interface OrganizationMapper {
 
     @Insert("INSERT INTO trade_organizations (name, org_type, description, logo_url, banner_url, contact_email, website_url, location, founder_id, join_type, status) " +
-            "VALUES (#{name}, #{orgType}, #{description}, #{logoUrl}, #{bannerUrl}, #{contactEmail}, #{websiteUrl}, #{location}, #{founderId}, #{joinType}, 'PENDING')")
+            "VALUES (#{name}, #{orgType}, #{description}, #{logoUrl}, #{bannerUrl}, #{contactEmail}, #{websiteUrl}, #{location}, #{founderId}, #{joinType}, #{status})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(Organization org);
 

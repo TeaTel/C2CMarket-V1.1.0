@@ -48,6 +48,11 @@ public class PostServiceImpl implements PostService {
         post.setPostType(dto.getPostType() != null ? dto.getPostType() : "DISCUSSION");
         post.setBoardId(dto.getBoardId());
         post.setTags(dto.getTags());
+        post.setCampusTag(dto.getCampusTag());
+        post.setStartTime(dto.getStartTime());
+        post.setEndTime(dto.getEndTime());
+        post.setLocation(dto.getLocation());
+        post.setContact(dto.getContact());
         postMapper.insert(post);
         log.info("发布帖子: id={}, userId={}, title={}", post.getId(), userId, dto.getTitle());
         return toPostVO(post, userId);
@@ -71,6 +76,12 @@ public class PostServiceImpl implements PostService {
         if (dto.getBoardId() != null) {
             post.setBoardId(dto.getBoardId());
         }
+        post.setStartTime(dto.getStartTime());
+        post.setEndTime(dto.getEndTime());
+        post.setLocation(dto.getLocation());
+        post.setContact(dto.getContact());
+        post.setTags(dto.getTags());
+        post.setCampusTag(dto.getCampusTag());
         postMapper.update(post);
         return toPostVO(postMapper.selectById(postId), userId);
     }
@@ -202,12 +213,20 @@ public class PostServiceImpl implements PostService {
         vo.setStatus(post.getStatus());
         vo.setCreatedAt(post.getCreatedAt());
         vo.setUpdatedAt(post.getUpdatedAt());
+        vo.setStartTime(post.getStartTime());
+        vo.setEndTime(post.getEndTime());
+        vo.setLocation(post.getLocation());
         vo.setTags(post.getTags());
+        vo.setCampusTag(post.getCampusTag());
+        vo.setContact(post.getContact());
+        vo.setIsAd(post.getIsAd());
+        vo.setExposureBoost(post.getExposureBoost());
 
         User user = userMapper.selectById(post.getUserId());
         if (user != null) {
             vo.setUserName(user.getNickname() != null ? user.getNickname() : user.getUsername());
             vo.setUserAvatar(user.getAvatar());
+            vo.setUserCampus(user.getCampus());
         }
 
         if (post.getBoardId() != null) {

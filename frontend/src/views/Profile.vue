@@ -3,6 +3,7 @@
     <header class="profile-header" v-if="isAuthenticated">
       <div class="header-bg"></div>
       <div class="user-info-card">
+        <input ref="avatarInput" type="file" accept="image/jpeg,image/png,image/webp" @change="handleAvatarChange" hidden />
         <div class="avatar-section" @click="handleAvatarClick">
           <img
             :src="userInfo.avatar || defaultAvatar"
@@ -19,11 +20,6 @@
           <div class="stat-item" @click="router.push('/my-products')">
             <span class="stat-value">{{ stats.published }}</span>
             <span class="stat-label">发布</span>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat-item">
-            <span class="stat-value">{{ stats.sold }}</span>
-            <span class="stat-label">已售</span>
           </div>
           <div class="stat-divider"></div>
           <div class="stat-item" @click="router.push('/favorites')">
@@ -174,7 +170,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
-import { productApi, favoriteApi } from '../services/api'
+import { productApi, favoriteApi, uploadApi, userApi } from '../services/api'
 import { useToast } from '../use/useToast'
 
 const router = useRouter()
@@ -202,12 +198,12 @@ const userInfo = computed(() => {
 
 const stats = reactive({
   published: 0,
-  sold: 0,
   favorites: 0
 })
 
 const showAbout = ref(false)
 const showLogoutConfirm = ref(false)
+const avatarInput = ref(null)
 
 onMounted(async () => {
   if (authStore.isAuthenticated.value) {
@@ -234,7 +230,6 @@ async function fetchStats() {
     if (myProductsRes.status === 'fulfilled' && myProductsRes.value.code === 200) {
       const products = myProductsRes.value.data || []
       stats.published = products.length
-      stats.sold = products.filter(p => p.status === 2).length
     }
 
     if (favCountRes.status === 'fulfilled' && favCountRes.value.code === 200) {
@@ -246,7 +241,41 @@ async function fetchStats() {
 }
 
 function handleAvatarClick() {
-  toast.showToast('头像上传功能开发中...')
+  avatarInput.value?.click()
+}
+
+async function handleAvatarChange(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+
+  // 格式验证
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    toast.showToast('仅支持 JPG/PNG/WEBP 格式', 'error')
+    return
+  }
+
+  // 大小验证
+  if (file.size > 5 * 1024 * 1024) {
+    toast.showToast('头像大小不能超过5MB', 'error')
+    return
+  }
+
+  try {
+    toast.showToast('上传中...', 'info')
+    const res = await uploadApi.uploadAvatar(file)
+    if (res.code === 200 && res.data?.url) {
+      // 更新用户头像
+      await userApi.updateProfile({ avatar: res.data.url })
+      await authStore.fetchUserInfo()
+      toast.showToast('头像更新成功', 'success')
+    } else {
+      toast.showToast(res.message || '上传失败', 'error')
+    }
+  } catch (err) {
+    toast.showToast(err.message || '头像上传失败', 'error')
+  }
+
+  e.target.value = ''
 }
 
 function goToSettings() {

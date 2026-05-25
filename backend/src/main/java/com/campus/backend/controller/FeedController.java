@@ -17,7 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -66,20 +65,21 @@ public class FeedController {
     @GetMapping
     public Result<Map<String, Object>> getFeed(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "12") int size,
             @RequestParam(required = false) String type,
-            @RequestParam(required = false) Long circleId) {
+            @RequestParam(required = false) Long circleId,
+            @RequestParam(required = false) String tag,
+            @RequestParam(required = false) String campusTag) {
 
         Long userId = SecurityUtils.getCurrentUserIdOrNull();
-        List<FeedItemVO> items = new ArrayList<>();
 
         PostQueryDTO postQuery = new PostQueryDTO();
         postQuery.setPage(page);
-        postQuery.setSize(size / 2);
+        postQuery.setSize(size);
 
         ProductQueryDTO productQuery = new ProductQueryDTO();
         productQuery.setPage(page);
-        productQuery.setSize(size / 2);
+        productQuery.setSize(size);
         productQuery.setStatus(1);
 
         if (circleId != null) {
@@ -87,23 +87,54 @@ public class FeedController {
             productQuery.setCategoryId(circleId.intValue());
         }
 
+        if (tag != null && !tag.isEmpty()) {
+            postQuery.setTag(tag);
+            productQuery.setTag(tag);
+        }
+
+        if (campusTag != null && !campusTag.isEmpty()) {
+            postQuery.setCampusTag(campusTag);
+            productQuery.setCampusTag(campusTag);
+        }
+
         if ("following".equals(type) && userId != null) {
             List<Long> followeeIds = getFolloweeIds(userId);
             if (followeeIds.isEmpty()) {
-                return Result.success(Map.of("list", List.of(), "page", page, "size", size, "total", 0));
+                // 关注列表为空时，fallback到发现模式，显示所有内容
+                type = "discover";
+            } else {
+                postQuery.setUserIds(followeeIds);
+                productQuery.setSellerIds(followeeIds);
             }
-            postQuery.setUserIds(followeeIds);
-            productQuery.setSellerIds(followeeIds);
         } else if ("campus".equals(type) && userId != null) {
             List<Long> campusUserIds = getCampusUserIds(userId);
             if (campusUserIds.isEmpty()) {
-                return Result.success(Map.of("list", List.of(), "page", page, "size", size, "total", 0));
+                // 校区用户为空时，fallback到发现模式
+                type = "discover";
+            } else {
+                postQuery.setUserIds(campusUserIds);
+                productQuery.setSellerIds(campusUserIds);
             }
-            postQuery.setUserIds(campusUserIds);
-            productQuery.setSellerIds(campusUserIds);
         }
 
+        // 获取总数
+        int postTotal = postService.getPostCount(postQuery);
+        int productTotal = productService.getProductCount(productQuery);
+        int total = postTotal + productTotal;
+
+        // 合并分页策略：查询足够多的数据以保证合并排序后能正确分页
+        // 需要查询 (page * size) 条数据，因为合并排序后位置可能变化
+        int fetchSize = page * size;
+        postQuery.setSize(fetchSize);
+        productQuery.setSize(fetchSize);
+        // 对于合并查询，始终从第1页开始获取，在内存中做统一分页
+        postQuery.setPage(1);
+        productQuery.setPage(1);
+
         List<PostVO> posts = postService.getPostList(postQuery, userId);
+        List<ProductVO> products = productService.getProductList(productQuery);
+
+        List<FeedItemVO> items = new ArrayList<>();
 
         for (PostVO post : posts) {
             FeedItemVO item = new FeedItemVO();
@@ -124,10 +155,13 @@ public class FeedController {
             item.setLocation(post.getLocation());
             item.setCreatedAt(post.getCreatedAt());
             item.setStartTime(post.getStartTime());
+            item.setIsAd(post.getIsAd());
+            item.setExposureBoost(post.getExposureBoost());
+            item.setTags(post.getTags());
+            item.setCampusTag(post.getCampusTag());
+            item.setUserCampus(post.getUserCampus());
             items.add(item);
         }
-
-        List<ProductVO> products = productService.getProductList(productQuery);
 
         for (ProductVO product : products) {
             FeedItemVO item = new FeedItemVO();
@@ -150,17 +184,40 @@ public class FeedController {
             item.setConditionText(product.getConditionText());
             item.setLocation(product.getLocation());
             item.setCreatedAt(product.getCreatedAt());
+            item.setTags(product.getTags());
+            item.setCampusTag(product.getCampusTag());
+            item.setUserCampus(product.getSellerCampus());
             items.add(item);
         }
 
-        Collections.shuffle(items);
+        // 按创建时间降序排列，广告根据曝光率提升排序权重
+        items.sort((a, b) -> {
+            long aTime = a.getCreatedAt() != null ? a.getCreatedAt().toEpochSecond(java.time.ZoneOffset.UTC) : 0;
+            long bTime = b.getCreatedAt() != null ? b.getCreatedAt().toEpochSecond(java.time.ZoneOffset.UTC) : 0;
+            int aBoost = (Boolean.TRUE.equals(a.getIsAd()) && a.getExposureBoost() != null) ? a.getExposureBoost() : 0;
+            int bBoost = (Boolean.TRUE.equals(b.getIsAd()) && b.getExposureBoost() != null) ? b.getExposureBoost() : 0;
+            long aScore = aTime + (long) aBoost * 3600;
+            long bScore = bTime + (long) bBoost * 3600;
+            return Long.compare(bScore, aScore);
+        });
 
-        int postTotal = postService.getPostCount(postQuery);
-        int productTotal = productService.getProductCount(productQuery);
-        int total = postTotal + productTotal;
+        // 按 itemType+id 去重
+        List<FeedItemVO> deduped = new ArrayList<>();
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (FeedItemVO item : items) {
+            String key = item.getItemType() + ":" + item.getId();
+            if (seen.add(key)) {
+                deduped.add(item);
+            }
+        }
+
+        // 正确的分页截取：从 (page-1)*size 开始，截取 size 条
+        int fromIndex = Math.min((page - 1) * size, deduped.size());
+        int toIndex = Math.min(page * size, deduped.size());
+        List<FeedItemVO> pageItems = deduped.subList(fromIndex, toIndex);
 
         Map<String, Object> result = Map.of(
-                "list", items,
+                "list", pageItems,
                 "page", page,
                 "size", size,
                 "total", total

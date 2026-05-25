@@ -87,6 +87,8 @@ public class Product {
 
     private String tags;
 
+    private String campusTag;
+
     private LocalDateTime createdAt;
 
     /** 更新时间 */

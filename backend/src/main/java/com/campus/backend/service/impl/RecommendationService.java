@@ -59,7 +59,8 @@ public class RecommendationService {
         }
 
         if (interestTags.isEmpty()) {
-            return Collections.emptyList();
+            // 新用户没有浏览历史时，返回热门内容作为默认推荐
+            return getHotItems(userId, limit);
         }
 
         List<ScoredItem> scoredItems = new ArrayList<>();
@@ -71,6 +72,11 @@ public class RecommendationService {
         for (PostVO post : allPosts) {
             if (recentPostIds.contains(post.getId())) continue;
             int score = matchScore(post.getTags(), interestTags);
+            // 广告帖子根据 exposureBoost 提升分数
+            if (Boolean.TRUE.equals(post.getIsAd()) && post.getExposureBoost() != null && post.getExposureBoost() > 1) {
+                score = score * post.getExposureBoost();
+                if (score == 0) score = post.getExposureBoost(); // 即使标签不匹配，广告也有基础曝光
+            }
             if (score > 0) {
                 var item = new ScoredItem();
                 item.itemType = "POST";
@@ -118,6 +124,8 @@ public class RecommendationService {
                 vo.setPostType(postEntity.getPostType());
                 vo.setCreatedAt(postEntity.getCreatedAt());
                 vo.setLocation(postEntity.getLocation());
+                vo.setIsAd(postEntity.getIsAd());
+                vo.setExposureBoost(postEntity.getExposureBoost());
                 User u = userMapper.selectById(postEntity.getUserId());
                 if (u != null) {
                     vo.setUserName(u.getNickname() != null ? u.getNickname() : u.getUsername());
@@ -161,6 +169,70 @@ public class RecommendationService {
             if (interestTags.contains(tag.trim())) score++;
         }
         return score;
+    }
+
+    /** 新用户无浏览历史时，返回按点赞数排序的热门内容 */
+    private List<FeedItemVO> getHotItems(Long userId, int limit) {
+        List<FeedItemVO> result = new ArrayList<>();
+
+        PostQueryDTO postQuery = new PostQueryDTO();
+        postQuery.setPage(1);
+        postQuery.setSize(limit);
+        postQuery.setSortBy("hot");
+        List<PostVO> hotPosts = postService.getPostList(postQuery, userId);
+        for (PostVO post : hotPosts) {
+            FeedItemVO vo = new FeedItemVO();
+            vo.setItemType("POST");
+            vo.setId(post.getId());
+            vo.setTitle(post.getTitle());
+            vo.setContent(post.getContent());
+            vo.setLikeCount(post.getLikeCount());
+            vo.setCommentCount(post.getCommentCount());
+            vo.setViewCount(post.getViewCount());
+            vo.setIsLiked(post.getIsLiked());
+            vo.setUserId(post.getUserId());
+            vo.setUserName(post.getUserName());
+            vo.setUserAvatar(post.getUserAvatar());
+            vo.setPostType(post.getPostType());
+            vo.setCreatedAt(post.getCreatedAt());
+            vo.setLocation(post.getLocation());
+            vo.setIsAd(post.getIsAd());
+            vo.setExposureBoost(post.getExposureBoost());
+            vo.setTags(post.getTags());
+            result.add(vo);
+        }
+
+        if (result.size() < limit) {
+            ProductQueryDTO productQuery = new ProductQueryDTO();
+            productQuery.setPage(1);
+            productQuery.setSize(limit - result.size());
+            productQuery.setStatus(1);
+            productQuery.setSortBy("view_count");
+            List<ProductVO> hotProducts = productService.getProductList(productQuery);
+            for (ProductVO product : hotProducts) {
+                FeedItemVO vo = new FeedItemVO();
+                vo.setItemType("PRODUCT");
+                vo.setId(product.getId());
+                vo.setTitle(product.getName());
+                vo.setContent(product.getDescription());
+                vo.setCoverImage(product.getCoverImage());
+                vo.setPrice(product.getPrice() != null ? product.getPrice().toString() : null);
+                vo.setOriginalPrice(product.getOriginalPrice() != null ? product.getOriginalPrice().toString() : null);
+                vo.setLikeCount(product.getLikeCount());
+                vo.setViewCount(product.getViewCount());
+                vo.setUserId(product.getSellerId());
+                vo.setUserName(product.getSellerName());
+                vo.setUserAvatar(product.getSellerAvatar());
+                vo.setCategoryId(product.getCategoryId());
+                vo.setCategoryName(product.getCategoryName());
+                vo.setLocation(product.getLocation());
+                vo.setCreatedAt(product.getCreatedAt());
+                vo.setTags(product.getTags());
+                result.add(vo);
+            }
+        }
+
+        return result.stream().limit(limit).collect(Collectors.toList());
     }
 
     private static class ScoredItem {

@@ -2,9 +2,11 @@ package com.campus.backend.controller;
 
 import com.campus.backend.common.Result;
 import com.campus.backend.common.SecurityUtils;
+import com.campus.backend.dto.PostCreateDTO;
 import com.campus.backend.dto.PostQueryDTO;
 import com.campus.backend.dto.PostVO;
 import com.campus.backend.service.PostService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -50,6 +52,36 @@ public class ActivityController {
         Long userId = SecurityUtils.getCurrentUserIdOrNull();
         PostVO post = postService.getPostDetail(id, userId);
         return Result.success(post);
+    }
+
+    @PostMapping
+    public Result<PostVO> createActivity(@Valid @RequestBody PostCreateDTO dto) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        dto.setPostType("ACTIVITY");
+        PostVO post = postService.createPost(dto, userId);
+        log.info("用户 {} 创建活动 {}", userId, post.getId());
+        return Result.success(post);
+    }
+
+    @GetMapping("/my")
+    public Result<Map<String, Object>> getMyActivities(@RequestParam(defaultValue = "1") int page,
+                                                        @RequestParam(defaultValue = "10") int size) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        PostQueryDTO query = new PostQueryDTO();
+        query.setPage(page);
+        query.setSize(size);
+        query.setPostType("ACTIVITY");
+        query.setUserId(userId);
+
+        List<PostVO> list = postService.getPostList(query, userId);
+        int total = postService.getPostCount(query);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", list);
+        result.put("page", page);
+        result.put("size", size);
+        result.put("total", total);
+        return Result.success(result);
     }
 
     @PostMapping("/{id}/join")

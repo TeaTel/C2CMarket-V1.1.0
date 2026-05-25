@@ -3,6 +3,8 @@ package com.campus.backend.controller;
 import com.campus.backend.common.Result;
 import com.campus.backend.common.SecurityUtils;
 import com.campus.backend.entity.*;
+import com.campus.backend.dto.MemberVO;
+import com.campus.backend.dto.JoinRequestVO;
 import com.campus.backend.service.impl.OrganizationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -86,7 +88,7 @@ public class OrganizationController {
     }
 
     @GetMapping("/{orgId}/requests")
-    public Result<List<OrgJoinRequest>> getPendingRequests(@PathVariable Long orgId) {
+    public Result<List<JoinRequestVO>> getPendingRequests(@PathVariable Long orgId) {
         return Result.success(orgService.getPendingRequests(orgId, SecurityUtils.getCurrentUserId()));
     }
 
@@ -103,7 +105,7 @@ public class OrganizationController {
     }
 
     @GetMapping("/{orgId}/members")
-    public Result<List<OrgMember>> getMembers(@PathVariable Long orgId,
+    public Result<List<MemberVO>> getMembers(@PathVariable Long orgId,
                                               @RequestParam(defaultValue = "1") int page,
                                               @RequestParam(defaultValue = "20") int size) {
         return Result.success(orgService.getMembers(orgId, page, size));

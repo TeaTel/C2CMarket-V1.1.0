@@ -50,6 +50,16 @@ public class PostVO {
 
     private String tags;
 
+    private String campusTag;
+
+    private String contact;
+
+    private Boolean isAd;
+
+    private Integer exposureBoost;
+
+    private String userCampus;
+
     public String getPostTypeText() {
         if (postType == null) return "讨论";
         return switch (postType) {

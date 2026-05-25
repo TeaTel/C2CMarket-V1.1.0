@@ -43,4 +43,12 @@ public class Post {
     private String location;
 
     private String tags;
+
+    private String campusTag;
+
+    private String contact;
+
+    private Boolean isAd;
+
+    private Integer exposureBoost;
 }

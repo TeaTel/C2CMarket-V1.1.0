@@ -4,6 +4,11 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:dev}
   application:
     name: campus-market-backend
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 50MB
   # Redis配置 - 禁用Redis，使用内存缓存
   data:
     redis:

@@ -64,13 +64,22 @@
               <span class="meta-value">{{ activity.location }}</span>
             </div>
           </div>
-          <div class="meta-item">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#FF6A00" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          <div v-if="activity.contact" class="meta-item">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#FF6A00" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
             <div>
-              <span class="meta-label">参与人数</span>
-              <span class="meta-value">{{ activity.participantCount || activity.viewCount || 0 }} 人已报名</span>
+              <span class="meta-label">联系方式</span>
+              <span class="meta-value">{{ activity.contact }}</span>
             </div>
           </div>
+
+        </div>
+
+        <div v-if="activityTags.length || activity.campusTag" class="activity-tags">
+          <span v-for="tag in activityTags" :key="tag" class="tag-item circle-tag">{{ tag }}</span>
+          <span v-if="activity.campusTag" class="tag-item campus-tag">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            {{ activity.campusTag }}
+          </span>
         </div>
       </section>
 
@@ -129,6 +138,11 @@ const defaultAvatar = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="ht
 const renderedContent = computed(() => {
   if (!activity.value?.content) return '暂无详细介绍'
   return activity.value.content.replace(/\n/g, '<br>')
+})
+
+const activityTags = computed(() => {
+  if (!activity.value?.tags) return []
+  return activity.value.tags.split(',').filter(t => t.trim())
 })
 
 const statusClass = computed(() => {
@@ -267,6 +281,33 @@ function formatDateTime(d) {
 .organizer-info { flex: 1; display: flex; flex-direction: column; }
 .organizer-name { font-size: 15px; font-weight: 600; color: #333; }
 .organizer-label { font-size: 12px; color: #999; }
+
+.activity-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.tag-item {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.circle-tag {
+  background: #FFF2E6;
+  color: #FF6A00;
+}
+
+.campus-tag {
+  background: #E8F5E9;
+  color: #4CAF50;
+}
 
 .description-card { background: #FFFFFF; padding: 20px 16px; margin-top: 10px; }
 .section-heading { font-size: 17px; font-weight: 700; color: #333; margin: 0 0 12px; }

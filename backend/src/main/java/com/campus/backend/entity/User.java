@@ -37,6 +37,9 @@ public class User {
     /** 学校名称 */
     private String school;
 
+    /** 校区 */
+    private String campus;
+
     /** 专业 */
     private String major;
 

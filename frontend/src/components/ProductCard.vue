@@ -21,6 +21,11 @@
 
     <h3 class="card-title">{{ product.title }}</h3>
 
+    <div v-if="productTags.length || product.campusTag" class="card-tags">
+      <span v-for="tag in productTags" :key="tag" class="tag-item circle-tag">{{ tag }}</span>
+      <span v-if="product.campusTag" class="tag-item campus-tag">{{ product.campusTag }}</span>
+    </div>
+
     <div class="card-user-bar">
       <div class="user-left" @click.stop="goToUser">
         <img :src="product.userAvatar || defaultAvatar" class="user-avatar" loading="lazy" @error="onAvatarError" />
@@ -40,6 +45,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import LikeButton from './LikeButton.vue'
 
@@ -51,6 +57,11 @@ const emit = defineEmits(['click', 'like-toggled'])
 const router = useRouter()
 
 const defaultAvatar = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#eee"/><circle cx="20" cy="15" r="8" fill="#ccc"/><ellipse cx="20" cy="35" rx="12" ry="8" fill="#ccc"/></svg>')
+
+const productTags = computed(() => {
+  if (!props.product.tags) return []
+  return props.product.tags.split(',').filter(t => t.trim())
+})
 
 function formatPrice(price) {
   if (!price) return '0'
@@ -136,6 +147,30 @@ function goToUser() {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 12px 0;
+}
+
+.tag-item {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.circle-tag {
+  background: #FFF2E6;
+  color: #FF6A00;
+}
+
+.campus-tag {
+  background: #E8F5E9;
+  color: #4CAF50;
 }
 
 .card-user-bar {

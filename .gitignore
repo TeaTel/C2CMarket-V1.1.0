@@ -84,6 +84,7 @@ temp/
 
 # 后端特定
 backend/target/
+backend/uploads/
 .env-setup/backend/.settings/
 .env-setup/backend/bin/
 .env-setup/backend/.metadata/

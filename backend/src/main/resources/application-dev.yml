@@ -47,3 +47,17 @@ logging:
   level:
     com.campus.backend: DEBUG
     org.springframework.security: DEBUG
+
+# 文件上传配置
+app:
+  upload:
+    base-path: ./uploads
+    image-max-size: 10485760  # 10MB
+    avatar-max-size: 5242880  # 5MB
+    allowed-types: image/jpeg,image/png,image/webp
+    allowed-extensions: jpg,jpeg,png,webp
+    compression-quality: 0.8
+    max-width: 1920
+    max-height: 1080
+    chunk-size: 2097152  # 2MB per chunk
+    temp-path: ./uploads/temp

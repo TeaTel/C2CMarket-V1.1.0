@@ -22,6 +22,7 @@ public class ProductVO {
     private String sellerName;
     private String sellerAvatar;
     private String sellerSchool;
+    private String sellerCampus;
     private Integer conditionLevel;
     private String conditionText;
     private List<String> imageUrls;
@@ -47,6 +48,8 @@ public class ProductVO {
     private String saleMode;
 
     private String tags;
+
+    private String campusTag;
 
     /** 获取成色文本 */
     public String getConditionText() {

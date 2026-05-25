@@ -29,6 +29,16 @@
         </div>
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ccc" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
       </div>
+      <button class="discover-card" @click="$router.push('/orgs/discover')">
+        <div class="discover-icon">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#FF6A00" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+        </div>
+        <div class="discover-info">
+          <span class="discover-title">发现组织</span>
+          <span class="discover-desc">浏览并加入更多组织</span>
+        </div>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ccc" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
+      </button>
     </main>
   </div>
 </template>
@@ -86,4 +96,21 @@ function randomColor(id) { return colors[Math.abs(Number(id)) % colors.length] }
 .status-pending { background: #FFF7E6; color: #FA8C16; }
 .status-ok { background: #F6FFED; color: #52C41A; }
 .org-count { font-size: 12px; color: #999; }
+
+.discover-card {
+  display: flex; align-items: center; gap: 14px; padding: 16px;
+  background: #fff; border-radius: 12px; cursor: pointer;
+  border: 1.5px dashed #DDE1E6; transition: all 0.15s; width: 100%;
+  text-align: left;
+}
+.discover-card:active { transform: scale(0.98); }
+.discover-card:hover { border-color: #FF6A00; background: #FFFBF5; }
+.discover-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  background: #FFF7E6; flex-shrink: 0;
+}
+.discover-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.discover-title { font-size: 15px; font-weight: 600; color: #333; }
+.discover-desc { font-size: 12px; color: #999; }
 </style>

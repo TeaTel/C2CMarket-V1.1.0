@@ -48,14 +48,6 @@
         </span>
       </div>
       <div class="activity-footer">
-        <span class="participant-count">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-            <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-            <circle cx="8.5" cy="7" r="4"/>
-            <polyline points="17 11 19 13 23 9"/>
-          </svg>
-          {{ formatCount(activity.participantCount) }} 人已报名
-        </span>
         <span class="activity-tag" v-if="activity.categoryName">{{ activity.categoryName }}</span>
       </div>
     </div>
@@ -96,11 +88,7 @@ function formatDate(dateStr) {
   return `${d.getFullYear()}/${month}/${day} ${hours}:${minutes}`
 }
 
-function formatCount(count) {
-  if (!count) return '0'
-  if (count >= 1000) return (count / 1000).toFixed(1) + 'k'
-  return count.toString()
-}
+
 </script>
 
 <style scoped>
@@ -219,14 +207,6 @@ function formatCount(count) {
   justify-content: space-between;
   padding-top: 10px;
   border-top: 1px solid #f5f5f5;
-}
-
-.participant-count {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: #666;
 }
 
 .activity-tag {

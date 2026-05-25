@@ -85,7 +85,7 @@ async function loadFeed() {
   try {
     const sortMap = { feed: 'time_desc', posts: 'time_desc', hot: 'hot' }
     if (tab.value === 'posts') {
-      const res = await postApi.getPostList({ page: page.value, size: 10, sortBy: sortMap[tab.value] })
+      const res = await postApi.getPosts({ page: page.value, size: 10, sortBy: sortMap[tab.value] })
       if (res.code === 200) {
         const list = res.data.list || []
         const postItems = list.map(p => ({ ...p, itemType: 'POST', postTypeText: p.postTypeText }))
@@ -116,7 +116,7 @@ async function loadMore() {
   try {
     const sortMap = { feed: 'time_desc', posts: 'time_desc', hot: 'hot' }
     if (tab.value === 'posts') {
-      const res = await postApi.getPostList({ page: page.value, size: 10, sortBy: sortMap[tab.value] })
+      const res = await postApi.getPosts({ page: page.value, size: 10, sortBy: sortMap[tab.value] })
       if (res.code === 200) {
         const list = res.data.list || []
         items.value = [...items.value, ...list.map(p => ({ ...p, itemType: 'POST' }))]

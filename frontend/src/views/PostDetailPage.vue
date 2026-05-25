@@ -49,7 +49,21 @@
       </section>
 
       <section class="text-section">
-        <h1 class="detail-title">{{ post.title }}</h1>
+        <h1 class="detail-title">
+          <span v-if="post.isAd" class="ad-tag">广告</span>
+          {{ post.title }}
+        </h1>
+        <div v-if="postTags.length || post.campusTag" class="detail-tags">
+          <span v-for="tag in postTags" :key="tag" class="tag-item circle-tag">{{ tag }}</span>
+          <span v-if="post.campusTag" class="tag-item campus-tag">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            {{ post.campusTag }}
+          </span>
+        </div>
+        <div v-if="post.userCampus" class="user-campus-info">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#999" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+          <span>发布者校区：{{ post.userCampus }}</span>
+        </div>
         <p class="detail-body" v-html="renderedContent"></p>
       </section>
 
@@ -89,7 +103,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { postApi, followApi } from '../services/api'
+import { postApi, followApi, favoriteApi } from '../services/api'
 import { useAuthStore } from '../store/auth'
 import LikeButton from '../components/LikeButton.vue'
 import CommentSection from '../components/CommentSection.vue'
@@ -116,6 +130,11 @@ const postImages = computed(() => {
 const renderedContent = computed(() => {
   if (!post.value?.content) return ''
   return post.value.content.replace(/\n/g, '<br>')
+})
+
+const postTags = computed(() => {
+  if (!post.value?.tags) return []
+  return post.value.tags.split(',').filter(t => t.trim())
 })
 
 onMounted(() => { loadPost() })
@@ -157,7 +176,21 @@ function onLikeToggled(isLiked, count) {
   if (post.value) { post.value.isLiked = isLiked; post.value.likeCount = count }
 }
 
-function toggleFavorite() { isFavorited.value = !isFavorited.value }
+async function toggleFavorite() {
+  if (!post.value) return
+  try {
+    if (isFavorited.value) {
+      await favoriteApi.removeFavorite(post.value.id)
+      isFavorited.value = false
+    } else {
+      await favoriteApi.addFavorite(post.value.id)
+      isFavorited.value = true
+    }
+  } catch (e) {
+    // 回滚状态
+    isFavorited.value = !isFavorited.value
+  }
+}
 function focusComment() { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }) }
 function handleShare() { navigator.clipboard?.writeText(window.location.href) }
 function previewImage(url) { window.open(url, '_blank') }
@@ -349,6 +382,21 @@ function goToUser() { if (post.value?.userId) router.push(`/users/${post.value.u
   color: #333333;
   line-height: 1.4;
   margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ad-tag {
+  display: inline-block;
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.06);
+  color: #999;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 3px;
+  flex-shrink: 0;
+  vertical-align: middle;
 }
 
 .detail-body {
@@ -358,6 +406,42 @@ function goToUser() { if (post.value?.userId) router.push(`/users/${post.value.u
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.tag-item {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.circle-tag {
+  background: #FFF2E6;
+  color: #FF6A00;
+}
+
+.campus-tag {
+  background: #E8F5E9;
+  color: #4CAF50;
+}
+
+.user-campus-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 12px;
 }
 
 .comment-section-wrapper {

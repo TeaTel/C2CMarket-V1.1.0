@@ -1,6 +1,8 @@
 package com.campus.backend.service.impl;
 
 import com.campus.backend.entity.*;
+import com.campus.backend.dto.MemberVO;
+import com.campus.backend.dto.JoinRequestVO;
 import com.campus.backend.mapper.*;
 import com.campus.backend.common.ErrorCode;
 import com.campus.backend.exception.BusinessException;
@@ -30,7 +32,7 @@ public class OrganizationService {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "必须选择加入方式: INVITE(仅邀请) 或 APPLY(可申请加入)");
         }
         org.setFounderId(userId);
-        org.setStatus("PENDING");
+        org.setStatus("APPROVED");
         orgMapper.insert(org);
 
         OrgMember founder = new OrgMember();
@@ -181,7 +183,7 @@ public class OrganizationService {
         joinRequestMapper.updateStatus(requestId, "REJECTED", reviewerId);
     }
 
-    public List<OrgJoinRequest> getPendingRequests(Long orgId, Long userId) {
+    public List<JoinRequestVO> getPendingRequests(Long orgId, Long userId) {
         OrgMember member = memberMapper.selectByOrgAndUser(orgId, userId);
         if (member == null || (!"ADMIN".equals(member.getRole()) && !"MODERATOR".equals(member.getRole()))) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "仅管理员可查看申请列表");
@@ -189,7 +191,7 @@ public class OrganizationService {
         return joinRequestMapper.selectPendingByOrgId(orgId);
     }
 
-    public List<OrgMember> getMembers(Long orgId, int page, int size) {
+    public List<MemberVO> getMembers(Long orgId, int page, int size) {
         return memberMapper.selectByOrgId(orgId, (page - 1) * size, size);
     }
 

@@ -1,6 +1,7 @@
 package com.campus.backend.mapper;
 
 import com.campus.backend.entity.OrgMember;
+import com.campus.backend.dto.MemberVO;
 import org.apache.ibatis.annotations.*;
 import java.util.List;
 
@@ -16,8 +17,10 @@ public interface OrgMemberMapper {
     @Select("SELECT * FROM org_members WHERE org_id = #{orgId} AND user_id = #{userId}")
     OrgMember selectByOrgAndUser(@Param("orgId") Long orgId, @Param("userId") Long userId);
 
-    @Select("SELECT * FROM org_members WHERE org_id = #{orgId} ORDER BY joined_at ASC LIMIT #{offset}, #{limit}")
-    List<OrgMember> selectByOrgId(@Param("orgId") Long orgId, @Param("offset") int offset, @Param("limit") int limit);
+    @Select("SELECT m.id, m.org_id, m.user_id, COALESCE(u.nickname, u.username) as user_name, u.avatar as user_avatar, m.role, m.joined_at " +
+            "FROM org_members m LEFT JOIN users u ON m.user_id = u.id " +
+            "WHERE m.org_id = #{orgId} ORDER BY m.joined_at ASC LIMIT #{offset}, #{limit}")
+    List<MemberVO> selectByOrgId(@Param("orgId") Long orgId, @Param("offset") int offset, @Param("limit") int limit);
 
     @Select("SELECT COUNT(*) FROM org_members WHERE org_id = #{orgId}")
     int countByOrgId(Long orgId);

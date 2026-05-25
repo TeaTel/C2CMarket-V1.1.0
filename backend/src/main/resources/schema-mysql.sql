@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS users (
     qq              VARCHAR(20)  DEFAULT NULL COMMENT 'QQ号',
     bio             VARCHAR(255) DEFAULT NULL COMMENT '个人简介',
     is_student      TINYINT(1)   DEFAULT 1 COMMENT '是否在校学生',
+    campus          VARCHAR(100) DEFAULT NULL COMMENT '校区',
     status          TINYINT(1)   DEFAULT 1 COMMENT '状态:0禁用,1正常,2封禁',
     last_login_at   DATETIME     DEFAULT NULL COMMENT '最后登录时间',
     created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -68,6 +69,15 @@ CREATE TABLE IF NOT EXISTS products (
     like_count      INT          DEFAULT 0 COMMENT '收藏/喜欢次数',
     location        VARCHAR(100) DEFAULT NULL COMMENT '交易地点(如:清华图书馆)',
     delivery_method TINYINT(1)   DEFAULT NULL COMMENT '交付方式:1自提,2快递,3均可',
+    story_title     VARCHAR(200) DEFAULT NULL COMMENT '故事标题',
+    story_content   TEXT         DEFAULT NULL COMMENT '故事正文(富文本)',
+    story_images    TEXT         DEFAULT NULL COMMENT '故事配图URL(JSON数组)',
+    has_story       TINYINT(1)   DEFAULT 0 COMMENT '是否有故事内容',
+    sale_mode       VARCHAR(20)  DEFAULT 'FIXED_PRICE' COMMENT '销售模式:FIXED_PRICE/AUCTION',
+    tags            VARCHAR(255) DEFAULT NULL COMMENT '标签(逗号分隔)',
+    campus_tag      VARCHAR(50)  DEFAULT NULL COMMENT '校区标签',
+    org_id          BIGINT       DEFAULT NULL COMMENT '关联交易组织ID',
+    visibility      VARCHAR(20)  DEFAULT 'PUBLIC' COMMENT '可见性:PUBLIC/ORG_ONLY',
     created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '发布时间',
     updated_at      DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
@@ -185,3 +195,198 @@ CREATE TABLE IF NOT EXISTS favorites (
     INDEX idx_user_id (user_id),
     INDEX idx_product_id (product_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='商品收藏表';
+
+-- -----------------------------------------------------------
+-- 9. 社区帖子表
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS posts (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '帖子ID',
+    user_id         BIGINT       NOT NULL COMMENT '发布者用户ID',
+    title           VARCHAR(200) NOT NULL COMMENT '帖子标题',
+    content         TEXT         NOT NULL COMMENT '帖子正文',
+    post_type       VARCHAR(30)  NOT NULL DEFAULT 'DISCUSSION' COMMENT '类型:DISCUSSION/SHOWCASE/HELP/ACTIVITY',
+    board_id        BIGINT       DEFAULT NULL COMMENT '所属板块ID',
+    group_buy_id    BIGINT       DEFAULT NULL COMMENT '关联团购活动ID',
+    view_count      INT          DEFAULT 0 COMMENT '浏览次数',
+    like_count      INT          DEFAULT 0 COMMENT '点赞次数',
+    comment_count   INT          DEFAULT 0 COMMENT '评论次数',
+    is_pinned       TINYINT(1)   DEFAULT 0 COMMENT '是否置顶',
+    is_essence      TINYINT(1)   DEFAULT 0 COMMENT '是否精华',
+    status          VARCHAR(20)  DEFAULT 'PUBLISHED' COMMENT '状态:PUBLISHED/DRAFT/HIDDEN/DELETED',
+    start_time      DATETIME     DEFAULT NULL COMMENT '活动开始时间',
+    end_time        DATETIME     DEFAULT NULL COMMENT '活动结束时间',
+    location        VARCHAR(200) DEFAULT NULL COMMENT '活动地点',
+    contact         VARCHAR(200) DEFAULT NULL COMMENT '负责人联系方式',
+    tags            VARCHAR(255) DEFAULT NULL COMMENT '标签(逗号分隔)',
+    campus_tag      VARCHAR(50)  DEFAULT NULL COMMENT '校区标签',
+    is_ad           TINYINT(1)   DEFAULT 0 COMMENT '是否为广告',
+    exposure_boost  INT          DEFAULT 1 COMMENT '曝光率提升倍数',
+    created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '发布时间',
+    updated_at      DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_user_id (user_id),
+    INDEX idx_board_id (board_id),
+    INDEX idx_post_type (post_type),
+    INDEX idx_status (status),
+    INDEX idx_created_at (created_at),
+    INDEX idx_group_buy_id (group_buy_id),
+    INDEX idx_posts_is_ad (is_ad)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='社区帖子表';
+
+-- -----------------------------------------------------------
+-- 10. 帖子评论表
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS post_comments (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '评论ID',
+    post_id         BIGINT       NOT NULL COMMENT '所属帖子ID',
+    user_id         BIGINT       NOT NULL COMMENT '评论者用户ID',
+    parent_id       BIGINT       DEFAULT NULL COMMENT '父评论ID(NULL为一级评论)',
+    content         TEXT         NOT NULL COMMENT '评论内容',
+    like_count      INT          DEFAULT 0 COMMENT '点赞次数',
+    status          VARCHAR(20)  DEFAULT 'PUBLISHED' COMMENT '状态:PUBLISHED/HIDDEN/DELETED',
+    created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '评论时间',
+    INDEX idx_post_id (post_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_parent_id (parent_id),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='帖子评论表';
+
+-- -----------------------------------------------------------
+-- 11. 商品评论表
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS product_comments (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '评论ID',
+    product_id      BIGINT       NOT NULL COMMENT '所属商品ID',
+    user_id         BIGINT       NOT NULL COMMENT '评论者用户ID',
+    parent_id       BIGINT       DEFAULT NULL COMMENT '父评论ID(NULL为一级评论)',
+    content         TEXT         NOT NULL COMMENT '评论内容',
+    like_count      INT          DEFAULT 0 COMMENT '点赞次数',
+    status          VARCHAR(20)  DEFAULT 'PUBLISHED' COMMENT '状态:PUBLISHED/HIDDEN/DELETED',
+    created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '评论时间',
+    INDEX idx_product_id (product_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_parent_id (parent_id),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='商品评论表';
+
+-- -----------------------------------------------------------
+-- 12. 通用点赞记录表
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS user_likes (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '记录ID',
+    user_id         BIGINT       NOT NULL COMMENT '点赞用户ID',
+    target_type     VARCHAR(30)  NOT NULL COMMENT '目标类型:POST/COMMENT/PRODUCT',
+    target_id       BIGINT       NOT NULL COMMENT '目标ID',
+    created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '点赞时间',
+    UNIQUE KEY uk_user_target (user_id, target_type, target_id),
+    INDEX idx_target (target_type, target_id),
+    INDEX idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='通用点赞记录表';
+
+-- -----------------------------------------------------------
+-- 13. 用户关注表
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS user_follows (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '记录ID',
+    follower_id     BIGINT       NOT NULL COMMENT '关注者用户ID',
+    followee_id     BIGINT       NOT NULL COMMENT '被关注者用户ID',
+    created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '关注时间',
+    UNIQUE KEY uk_follow (follower_id, followee_id),
+    INDEX idx_follower (follower_id),
+    INDEX idx_followee (followee_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户关注表';
+
+-- -----------------------------------------------------------
+-- 14. 用户行为记录表
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS user_behaviors (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '记录ID',
+    user_id         BIGINT       NOT NULL COMMENT '用户ID',
+    behavior_type   VARCHAR(30)  DEFAULT NULL COMMENT '行为类型',
+    target_type     VARCHAR(30)  DEFAULT NULL COMMENT '目标类型',
+    target_id       BIGINT       DEFAULT NULL COMMENT '目标ID',
+    created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    INDEX idx_user_id (user_id),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户行为记录表';
+
+-- -----------------------------------------------------------
+-- 15. 交易组织表
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS trade_organizations (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '组织ID',
+    name            VARCHAR(100) DEFAULT NULL COMMENT '组织名称',
+    org_type        VARCHAR(50)  DEFAULT NULL COMMENT '组织类型',
+    description     VARCHAR(500) DEFAULT NULL COMMENT '组织描述',
+    logo_url        VARCHAR(500) DEFAULT NULL COMMENT 'Logo URL',
+    banner_url      VARCHAR(500) DEFAULT NULL COMMENT 'Banner URL',
+    contact_email   VARCHAR(100) DEFAULT NULL COMMENT '联系邮箱',
+    website_url     VARCHAR(500) DEFAULT NULL COMMENT '网站URL',
+    location        VARCHAR(200) DEFAULT NULL COMMENT '位置',
+    founder_id      BIGINT       DEFAULT NULL COMMENT '创始人用户ID',
+    join_type       VARCHAR(20)  DEFAULT NULL COMMENT '加入方式',
+    status          VARCHAR(20)  DEFAULT 'PENDING' COMMENT '状态:PENDING/APPROVED/REJECTED',
+    member_count    INT          DEFAULT 0 COMMENT '成员数量',
+    created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at      DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_founder_id (founder_id),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='交易组织表';
+
+-- -----------------------------------------------------------
+-- 16. 组织成员表
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS org_members (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '记录ID',
+    org_id          BIGINT       NOT NULL COMMENT '组织ID',
+    user_id         BIGINT       NOT NULL COMMENT '用户ID',
+    role            VARCHAR(20)  DEFAULT NULL COMMENT '角色',
+    joined_at       DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '加入时间',
+    INDEX idx_org_id (org_id),
+    INDEX idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='组织成员表';
+
+-- -----------------------------------------------------------
+-- 17. 组织加入申请表
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS org_join_requests (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '申请ID',
+    org_id          BIGINT       NOT NULL COMMENT '组织ID',
+    user_id         BIGINT       NOT NULL COMMENT '申请用户ID',
+    message         VARCHAR(500) DEFAULT NULL COMMENT '申请留言',
+    status          VARCHAR(20)  DEFAULT 'PENDING' COMMENT '状态:PENDING/APPROVED/REJECTED',
+    reviewer_id     BIGINT       DEFAULT NULL COMMENT '审核人ID',
+    created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    reviewed_at     DATETIME     DEFAULT NULL COMMENT '审核时间',
+    INDEX idx_org_id (org_id),
+    INDEX idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='组织加入申请表';
+
+-- -----------------------------------------------------------
+-- 18. 组织邀请表
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS org_invitations (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '邀请ID',
+    org_id          BIGINT       NOT NULL COMMENT '组织ID',
+    inviter_id      BIGINT       NOT NULL COMMENT '邀请人ID',
+    invitee_id      BIGINT       NOT NULL COMMENT '被邀请人ID',
+    invite_code     VARCHAR(50)  DEFAULT NULL COMMENT '邀请码',
+    status          VARCHAR(20)  DEFAULT 'PENDING' COMMENT '状态:PENDING/ACCEPTED/REJECTED',
+    created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    responded_at    DATETIME     DEFAULT NULL COMMENT '响应时间',
+    INDEX idx_org_id (org_id),
+    INDEX idx_invitee_id (invitee_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='组织邀请表';
+
+-- -----------------------------------------------------------
+-- 19. 组织审计日志表
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS org_audit_logs (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '日志ID',
+    org_id          BIGINT       NOT NULL COMMENT '组织ID',
+    actor_id        BIGINT       NOT NULL COMMENT '操作者ID',
+    action          VARCHAR(50)  DEFAULT NULL COMMENT '操作类型',
+    target_id       BIGINT       DEFAULT NULL COMMENT '目标ID',
+    detail          VARCHAR(500) DEFAULT NULL COMMENT '详情',
+    created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    INDEX idx_org_id (org_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='组织审计日志表';

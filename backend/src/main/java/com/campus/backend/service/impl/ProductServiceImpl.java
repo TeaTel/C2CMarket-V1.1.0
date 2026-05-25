@@ -66,6 +66,7 @@ public class ProductServiceImpl implements ProductService {
         BeanUtils.copyProperties(dto, product);
         product.setSellerId(sellerId);
         product.setStatus(1); // 在售
+        product.setCampusTag(dto.getCampusTag());
 
         // 处理图片列表 -> JSON字符串
         if (dto.getImageUrls() != null && !dto.getImageUrls().isEmpty()) {
@@ -196,9 +197,20 @@ public class ProductServiceImpl implements ProductService {
                     vo.setSellerName(seller.getNickname() != null ? seller.getNickname() : seller.getUsername());
                     vo.setSellerAvatar(seller.getAvatar());
                     vo.setSellerSchool(seller.getSchool());
+                    vo.setSellerCampus(seller.getCampus());
                 }
             }
         } catch (Exception ignored) {}
+
+        // 商品图片JSON -> List
+        if (product.getImageUrls() != null && !product.getImageUrls().isBlank()) {
+            try {
+                vo.setImageUrls(objectMapper.readValue(product.getImageUrls(),
+                        new TypeReference<List<String>>() {}));
+            } catch (JsonProcessingException e) {
+                log.warn("商品图片URL反序列化失败", e);
+            }
+        }
 
         // 故事配图JSON -> List
         if (product.getStoryImages() != null && !product.getStoryImages().isBlank()) {

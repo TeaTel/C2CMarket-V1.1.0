@@ -54,7 +54,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { postApi, productCommentApi } from '../services/api'
 import { useAuthStore } from '../store/auth'
 import LikeButton from './LikeButton.vue'
@@ -76,6 +76,8 @@ const defaultAvatar = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="ht
 const currentUserId = auth.currentUser?.id
 
 const commentApi = props.targetType === 'product' ? productCommentApi : postApi
+
+onMounted(() => { loadComments() })
 
 function formatTime(dateStr) {
   if (!dateStr) return ''
@@ -100,7 +102,20 @@ function cancelReply() {
   newComment.value = ''
 }
 
-function getReplyTargetName(reply) { return '' }
+function getReplyTargetName(reply) {
+  // 在replies中查找parentId对应的评论用户名
+  if (!reply.parentId) return ''
+  const parentComment = comments.value.find(c => c.id === reply.parentId)
+  if (parentComment) return parentComment.userName || '匿名用户'
+  // 也可能在同一父评论的replies中
+  for (const c of comments.value) {
+    if (c.replies) {
+      const parent = c.replies.find(r => r.id === reply.parentId)
+      if (parent) return parent.userName || '匿名用户'
+    }
+  }
+  return ''
+}
 
 async function submitComment() {
   if (!newComment.value.trim()) return

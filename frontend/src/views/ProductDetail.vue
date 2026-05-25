@@ -55,6 +55,17 @@
           <span v-if="product.originalPrice && product.originalPrice > product.price" class="price-original">¥{{ formatPrice(product.originalPrice) }}</span>
         </div>
         <h1 class="detail-title">{{ product.name }}</h1>
+        <div v-if="productTags.length || product.campusTag" class="detail-tags">
+          <span v-for="tag in productTags" :key="tag" class="tag-item circle-tag">{{ tag }}</span>
+          <span v-if="product.campusTag" class="tag-item campus-tag">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            {{ product.campusTag }}
+          </span>
+        </div>
+        <div v-if="product.sellerCampus" class="seller-campus-info">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#999" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+          <span>卖家校区：{{ product.sellerCampus }}</span>
+        </div>
         <p class="detail-body">{{ product.description || '暂无详细描述' }}</p>
       </section>
 
@@ -98,7 +109,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { productApi, followApi } from '../services/api'
+import { productApi, followApi, favoriteApi } from '../services/api'
 import { useAuthStore } from '../store/auth'
 import LikeButton from '../components/LikeButton.vue'
 import CommentSection from '../components/CommentSection.vue'
@@ -118,11 +129,19 @@ const defaultAvatar = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="ht
 
 const productImages = computed(() => {
   if (!product.value) return []
-  const arr = product.value.images || []
-  if (arr.length) return arr
-  if (product.value.imageUrl) return [product.value.imageUrl]
+  // imageUrls 可能是 JSON 字符串或数组
+  let urls = product.value.imageUrls
+  if (typeof urls === 'string') {
+    try { urls = JSON.parse(urls) } catch (e) { urls = null }
+  }
+  if (Array.isArray(urls) && urls.length) return urls
   if (product.value.coverImage) return [product.value.coverImage]
   return []
+})
+
+const productTags = computed(() => {
+  if (!product.value?.tags) return []
+  return product.value.tags.split(',').filter(t => t.trim())
 })
 
 onMounted(() => { loadProduct() })
@@ -164,7 +183,20 @@ function onLikeToggled(isLiked, count) {
   if (product.value) { product.value.isLiked = isLiked; product.value.likeCount = count }
 }
 
-function toggleFavorite() { isFavorited.value = !isFavorited.value }
+async function toggleFavorite() {
+  if (!product.value) return
+  try {
+    if (isFavorited.value) {
+      await favoriteApi.removeFavorite(product.value.id)
+      isFavorited.value = false
+    } else {
+      await favoriteApi.addFavorite(product.value.id)
+      isFavorited.value = true
+    }
+  } catch (e) {
+    isFavorited.value = !isFavorited.value
+  }
+}
 function focusComment() { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }) }
 function previewImage(url) { window.open(url, '_blank') }
 function handleShare() { navigator.clipboard?.writeText(window.location.href) }
@@ -409,6 +441,42 @@ function goToSeller() { if (product.value?.sellerId) router.push(`/users/${produ
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.tag-item {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.circle-tag {
+  background: #FFF2E6;
+  color: #FF6A00;
+}
+
+.campus-tag {
+  background: #E8F5E9;
+  color: #4CAF50;
+}
+
+.seller-campus-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 12px;
 }
 
 .extra-images {

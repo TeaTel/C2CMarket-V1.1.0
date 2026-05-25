@@ -84,16 +84,17 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserVO updateProfile(Long userId, User profileData) {
         User existing = getUserEntityById(userId);
-        // 只更新允许修改的字段
-        existing.setNickname(profileData.getNickname());
-        existing.setAvatar(profileData.getAvatar());
-        existing.setGender(profileData.getGender());
-        existing.setSchool(profileData.getSchool());
-        existing.setMajor(profileData.getMajor());
-        existing.setGrade(profileData.getGrade());
-        existing.setWechat(profileData.getWechat());
-        existing.setQq(profileData.getQq());
-        existing.setBio(profileData.getBio());
+        // 只更新非null的字段，避免部分更新时覆盖已有数据
+        if (profileData.getNickname() != null) existing.setNickname(profileData.getNickname());
+        if (profileData.getAvatar() != null) existing.setAvatar(profileData.getAvatar());
+        if (profileData.getGender() != null) existing.setGender(profileData.getGender());
+        if (profileData.getSchool() != null) existing.setSchool(profileData.getSchool());
+        if (profileData.getCampus() != null) existing.setCampus(profileData.getCampus());
+        if (profileData.getMajor() != null) existing.setMajor(profileData.getMajor());
+        if (profileData.getGrade() != null) existing.setGrade(profileData.getGrade());
+        if (profileData.getWechat() != null) existing.setWechat(profileData.getWechat());
+        if (profileData.getQq() != null) existing.setQq(profileData.getQq());
+        if (profileData.getBio() != null) existing.setBio(profileData.getBio());
         userMapper.updateProfile(existing);
         return convertToVO(existing);
     }

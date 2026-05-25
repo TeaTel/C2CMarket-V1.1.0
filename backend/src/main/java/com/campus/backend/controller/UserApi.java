@@ -69,6 +69,7 @@ public class UserApi {
         safeData.setAvatar(profileData.getAvatar());
         safeData.setGender(profileData.getGender());
         safeData.setSchool(profileData.getSchool());
+        safeData.setCampus(profileData.getCampus());
         safeData.setMajor(profileData.getMajor());
         safeData.setGrade(profileData.getGrade());
         safeData.setWechat(profileData.getWechat());

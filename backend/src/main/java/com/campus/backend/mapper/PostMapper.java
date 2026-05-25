@@ -11,13 +11,16 @@ public interface PostMapper {
     @Select("SELECT * FROM posts WHERE id = #{id}")
     Post selectById(Long id);
 
-    @Insert("INSERT INTO posts (user_id, title, content, post_type, board_id, group_buy_id, is_pinned, status, tags) " +
-            "VALUES (#{userId}, #{title}, #{content}, #{postType}, #{boardId}, #{groupBuyId}, COALESCE(#{isPinned}, 0), 'PUBLISHED', #{tags})")
+    @Insert("INSERT INTO posts (user_id, title, content, post_type, board_id, group_buy_id, is_pinned, status, tags, campus_tag, is_ad, exposure_boost, start_time, end_time, location, contact) " +
+            "VALUES (#{userId}, #{title}, #{content}, #{postType}, #{boardId}, #{groupBuyId}, COALESCE(#{isPinned}, 0), 'PUBLISHED', #{tags}, #{campusTag}, COALESCE(#{isAd}, 0), COALESCE(#{exposureBoost}, 1), #{startTime}, #{endTime}, #{location}, #{contact})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(Post post);
 
     @Update("UPDATE posts SET title = #{title}, content = #{content}, post_type = #{postType}, " +
-            "board_id = #{boardId}, updated_at = CURRENT_TIMESTAMP WHERE id = #{id}")
+            "board_id = #{boardId}, exposure_boost = #{exposureBoost}, start_time = #{startTime}, " +
+            "end_time = #{endTime}, location = #{location}, contact = #{contact}, " +
+            "tags = #{tags}, campus_tag = #{campusTag}, " +
+            "updated_at = CURRENT_TIMESTAMP WHERE id = #{id}")
     int update(Post post);
 
     @Update("UPDATE posts SET status = 'DELETED', updated_at = CURRENT_TIMESTAMP WHERE id = #{id}")

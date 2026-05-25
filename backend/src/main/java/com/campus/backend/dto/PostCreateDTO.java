@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 public class PostCreateDTO {
 
@@ -20,4 +22,14 @@ public class PostCreateDTO {
     private Long boardId;
 
     private String tags;
+
+    private String campusTag;
+
+    private LocalDateTime startTime;
+
+    private LocalDateTime endTime;
+
+    private String location;
+
+    private String contact;
 }

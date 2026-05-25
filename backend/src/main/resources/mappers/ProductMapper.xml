@@ -47,6 +47,14 @@
             <if test="query.hasStory != null">
                 AND has_story = #{query.hasStory}
             </if>
+            <!-- 标签筛选 -->
+            <if test="query.tag != null and query.tag != ''">
+                AND FIND_IN_SET(#{query.tag}, tags)
+            </if>
+            <!-- 校区标签筛选 -->
+            <if test="query.campusTag != null and query.campusTag != ''">
+                AND campus_tag = #{query.campusTag}
+            </if>
         </where>
         <!-- 排序 -->
         <choose>
@@ -93,6 +101,10 @@
             <if test="query.hasStory != null">
                 AND has_story = #{query.hasStory}
             </if>
+            <!-- 校区标签筛选 -->
+            <if test="query.campusTag != null and query.campusTag != ''">
+                AND campus_tag = #{query.campusTag}
+            </if>
         </where>
     </select>
 
@@ -115,6 +127,8 @@
             <if test="storyImages != null">story_images = #{storyImages},</if>
             <if test="hasStory != null">has_story = #{hasStory},</if>
             <if test="saleMode != null">sale_mode = #{saleMode},</if>
+            <if test="tags != null">tags = #{tags},</if>
+            <if test="campusTag != null">campus_tag = #{campusTag},</if>
             updated_at = CURRENT_TIMESTAMP
         </set>
         WHERE id = #{id}

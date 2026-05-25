@@ -155,12 +155,6 @@ export const userApi = {
     return api.put('/v2/users/password', data)
   },
 
-  uploadAvatar(formData) {
-    return api.post('/v2/users/avatar', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
-  },
-
   sendResetCode(account) {
     return api.post('/v2/users/reset-password/send-code', { account })
   },
@@ -196,12 +190,6 @@ export const productApi = {
 
   getMyProducts() {
     return api.get('/products/my')
-  },
-
-  uploadImage(formData) {
-    return api.post('/products/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
   },
 
   searchProducts(keyword) {
@@ -547,6 +535,8 @@ export const feedApi = {
 export const activityApi = {
   getActivities(params) { return api.get('/v2/activities', { params }) },
   getActivityDetail(id) { return api.get(`/v2/activities/${id}`) },
+  createActivity(data) { return api.post('/v2/activities', data) },
+  getMyActivities(params) { return api.get('/v2/activities/my', { params }) },
   joinActivity(id) { return api.post(`/v2/activities/${id}/join`) },
   cancelJoin(id) { return api.delete(`/v2/activities/${id}/join`) }
 }
@@ -555,6 +545,70 @@ export const activityApi = {
 export const storyApi = {
   getStoryFeed(params) { return api.get('/v2/stories/feed', { params }) },
   getUserStories(userId) { return api.get(`/v2/stories/user/${userId}`) }
+}
+
+// ==================== 广告 API ====================
+export const adApi = {
+  createAd(data) { return api.post('/v2/ads', data) },
+  getPackages() { return api.get('/v2/ads/packages') },
+  simulatePayment(postId, packageId) { return api.post(`/v2/ads/${postId}/pay`, { packageId }) }
+}
+
+// ==================== 文件上传 API ====================
+export const uploadApi = {
+  // 上传单张图片
+  uploadImage(file, onProgress) {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post('/v2/upload/image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: onProgress,
+      timeout: 60000
+    })
+  },
+
+  // 批量上传图片
+  uploadImages(files, onProgress) {
+    const formData = new FormData()
+    files.forEach(file => formData.append('files', file))
+    return api.post('/v2/upload/images', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: onProgress,
+      timeout: 120000
+    })
+  },
+
+  // 上传头像
+  uploadAvatar(file, onProgress) {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post('/v2/upload/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: onProgress,
+      timeout: 60000
+    })
+  },
+
+  // 上传分片
+  uploadChunk(chunk, fileId, chunkIndex, totalChunks, fileName) {
+    const formData = new FormData()
+    formData.append('chunk', chunk)
+    formData.append('fileId', fileId)
+    formData.append('chunkIndex', chunkIndex)
+    formData.append('totalChunks', totalChunks)
+    formData.append('fileName', fileName)
+    return api.post('/v2/upload/chunk', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60000
+    })
+  },
+
+  // 合并分片
+  mergeChunks(fileId, fileName, totalChunks) {
+    return api.post('/v2/upload/merge', null, {
+      params: { fileId, fileName, totalChunks }
+    })
+  }
 }
 
 // ==================== 组织 API ====================

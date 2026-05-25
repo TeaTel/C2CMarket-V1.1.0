@@ -29,6 +29,12 @@
             <if test="query.status == null or query.status == ''">
                 AND status = 'PUBLISHED'
             </if>
+            <if test="query.tag != null and query.tag != ''">
+                AND FIND_IN_SET(#{query.tag}, tags)
+            </if>
+            <if test="query.campusTag != null and query.campusTag != ''">
+                AND campus_tag = #{query.campusTag}
+            </if>
         </where>
     </sql>
 

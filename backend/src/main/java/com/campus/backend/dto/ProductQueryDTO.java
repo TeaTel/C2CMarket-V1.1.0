@@ -36,6 +36,12 @@ public class ProductQueryDTO {
     /** 是否有故事内容 */
     private Boolean hasStory;
 
+    /** 标签筛选 */
+    private String tag;
+
+    /** 校区标签筛选 */
+    private String campusTag;
+
     /** 排序方式: price_asc, price_desc, time_desc(默认), view_count */
     private String sortBy = "time_desc";
 

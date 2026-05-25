@@ -98,6 +98,12 @@ const routes = [
     meta: { title: '帖子详情' }
   },
   {
+    path: '/ads/create',
+    name: 'AdCreate',
+    component: () => import('../views/AdEditPage.vue'),
+    meta: { requiresAuth: true, title: '广告编辑' }
+  },
+  {
     path: '/boards',
     name: 'BoardsDiscover',
     component: () => import('../views/BoardsDiscoverPage.vue'),
@@ -152,12 +158,30 @@ const routes = [
     }
   },
   {
+    path: '/my-activities',
+    name: 'MyActivities',
+    component: () => import('../views/MyActivities.vue'),
+    meta: {
+      requiresAuth: true,
+      title: '我的活动'
+    }
+  },
+  {
     path: '/address',
     name: 'Address',
     component: () => import('../views/Address.vue'),
     meta: {
       requiresAuth: true,
       title: '收货地址'
+    }
+  },
+  {
+    path: '/campus',
+    name: 'Campus',
+    component: () => import('../views/CampusPage.vue'),
+    meta: {
+      requiresAuth: true,
+      title: '我的校区'
     }
   },
   {
@@ -168,12 +192,6 @@ const routes = [
       requiresAuth: true,
       title: '设置'
     }
-  },
-  // 404页面
-  {
-    path: '/:pathMatch(.*)*',
-    name: 'NotFound',
-    component: () => import('../views/NotFound.vue')
   },
   // 活动页面
   {
@@ -213,6 +231,12 @@ const routes = [
     component: () => import('../views/OrgDetailPage.vue'),
     meta: { title: '组织详情' }
   },
+  // 404页面 - 必须放在最后
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('../views/NotFound.vue')
+  }
 ]
 
 const router = createRouter({

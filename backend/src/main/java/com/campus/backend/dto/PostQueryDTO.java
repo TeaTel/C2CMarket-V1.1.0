@@ -18,6 +18,10 @@ public class PostQueryDTO {
 
     private String status;
 
+    private String tag;
+
+    private String campusTag;
+
     private String sortBy = "time_desc";
 
     private Integer page = 1;

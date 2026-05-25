@@ -41,7 +41,8 @@
         <div v-if="manageTab === 'requests'" class="panel-body">
           <div v-if="pendingRequests.length === 0" class="empty-panel">暂无待审批申请</div>
           <div v-for="req in pendingRequests" :key="req.id" class="request-item">
-            <span>用户 {{ req.userId }} 申请加入</span>
+            <img :src="req.userAvatar || defaultAvatar" class="member-avatar" @error="e => e.target.src = defaultAvatar" />
+            <span class="req-user">{{ req.userName || '用户' + req.userId }} 申请加入</span>
             <span class="req-msg" v-if="req.message">{{ req.message }}</span>
             <div class="req-actions">
               <button class="btn-approve" @click="approveReq(req.id)">通过</button>
@@ -52,7 +53,8 @@
 
         <div v-if="manageTab === 'members'" class="panel-body">
           <div v-for="m in members" :key="m.id" class="member-item">
-            <span>用户 {{ m.userId }}</span>
+            <img :src="m.userAvatar || defaultAvatar" class="member-avatar" @error="e => e.target.src = defaultAvatar" />
+            <span class="member-name">{{ m.userName || '用户' + m.userId }}</span>
             <span class="role-tag">{{ roleLabel(m.role) }}</span>
             <div v-if="myRole.role === 'ADMIN' && m.role !== 'ADMIN'" class="member-actions">
               <button @click="changeRole(m.userId, 'MODERATOR')" v-if="m.role === 'MEMBER'">升为管理</button>
@@ -100,6 +102,7 @@ const auditLogs = ref([])
 const inviteUserId = ref('')
 const applying = ref(false)
 const hasApplied = ref(false)
+const defaultAvatar = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23eee" width="100" height="100"/><text x="50" y="54" text-anchor="middle" font-size="36" fill="%23999" font-family="sans-serif">?</text></svg>'
 
 onMounted(async () => {
   const orgId = route.params.id
@@ -200,6 +203,9 @@ function formatTime(t) { return t ? new Date(t).toLocaleString('zh-CN') : '' }
 .empty-panel { text-align: center; padding: 32px; color: #ccc; }
 
 .request-item, .member-item { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid #f5f5f5; font-size: 14px; flex-wrap: wrap; }
+.req-user { flex: 1; min-width: 0; }
+.member-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: #eee; flex-shrink: 0; }
+.member-name { font-weight: 500; color: #333; }
 .req-msg { color: #999; font-size: 12px; flex-basis: 100%; }
 .req-actions, .member-actions { margin-left: auto; display: flex; gap: 6px; }
 .btn-approve { padding: 4px 12px; border: none; border-radius: 12px; background: #E8F4FD; color: #1890FF; font-size: 12px; cursor: pointer; }
